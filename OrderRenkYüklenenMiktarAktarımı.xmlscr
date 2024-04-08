@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderRenkYüklenenMiktarAktarimi" Enabled="true" Priority="0" ScriptName="OrderRenkYüklenenMiktarAktarimi">
+  <Events>
+    <Event Enabled="true" ObjectName="PackagingListEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="PackagingListEN" />
+  </Events>
+  <Histories />
+  <ScriptText>/*
+Çeki başarili bir şekilde kayit edildiği zaman renklere göre order satirinda açilan özel alana çeki miktari order satiri miktarindan fazla ise fazla yüklenmiş az ise eksik yüklenmiş tam ise tam yüklenmiş şeklinde yazacaktir. Açilan diğer özel alana ise yüklenen renk miktari aktarilacaktir.
+*/
+function OnAfterSucceededPost(sender,ev)
+{
+    if (BaseObject == null 
+	|| BaseObject.CurrentRow == null
+	|| BaseObject.CurrentRow.Row == null)
+    return null;
+
+     foreach(dr in BaseObject.Data.Tables["IM_PackagingListItem"].Select("WorkOrderItemId is not null"))
+ 	{
+        order_row_rec = Convert.ToInt32(dr["WorkOrderItemId"]);
+        
+        query = "select cast(sum(isnull(PLI.Quantity,0)) as decimal (15,2)) [mik] from IM_PackagingListItem PLI with (nolock)  ";
+        query += " left join IM_PackagingList PL with (nolock) on PL.RecId=PLI.PackagingListId ";
+        query += " where PLI.WorkOrderItemId="+order_row_rec+" and PL.PackagingType=1 and PL.CompanyId="+BaseObject.ActiveSession.Company.RecId;
+		
+        dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query);
+            
+            if(dt==null || dt.Rows.Count&lt;0)           
+            return null;
+            
+            
+      //  MessageBox.Show(query.ToString());
+
+        order_query = "select isnull(WOI.Quantity,0) [mik_o] from MA_WorkOrderItem WOI with (nolock) where WOI.RecId="+order_row_rec;
+        dt_order_query = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_order_query", order_query);
+        
+          if(dt_order_query==null || dt_order_query.Rows.Count&lt;0)
+            return null;
+            
+	//	MessageBox.Show(order_query.ToString());
+		
+        order_color_quantity = Convert.ToDecimal(dt_order_query.Rows[0]["mik_o"]);
+        packing_color_quantity = Convert.ToDecimal(dt.Rows[0]["mik"]);
+
+        status = "";
+        if(packing_color_quantity &lt; order_color_quantity)
+            status="Eksik Yüklendi";
+        else if (packing_color_quantity &gt; order_color_quantity)
+            status="Fazla Yüklendi";
+        else
+            status="Tam Yüklendi";
+
+        update_query = "update MA_WorkOrderItem set UD_SevkM = \'"+packing_color_quantity.ToString().Replace(",",".")+"\' ,UpdatedAt = GETDATE(),  UD_YuklemeDurumu =\'"+status.ToString()+"\' where RecId="+order_row_rec;
+       
+       // MessageBox.Show(update_query.ToString());
+		
+        UtilityFunctions.SqlCustomNonQuery(BaseObject.Connection, BaseObject.Transaction, update_query);
+			
+    } 
+
+}</ScriptText>
+</ScriptDefinition>

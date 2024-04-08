@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderBedenBazliKesimFazlasi" Enabled="true" Priority="0" ScriptName="OrderBedenBazliKesimFazlasi">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>
+//Generated on 7.09.2023 17:25:16 OrderBedenBazliKesimFazlasi
+/*
+Order satirinda girilen beden bazli miktarlarin verilen formüllere göre kesilecek adetlerin hesaplanmasini sağlar.
+*/
+
+dist_ = 0;
+woi_subno=0;
+woiv_subno=0;
+woiv_item_id="";
+function OnAfterSucceededPost(sender,ev)
+{
+ 
+    if(BaseObject == null 	
+	|| BaseObject.CurrentRow == null 	
+	|| BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("SText"))
+        return null;
+        
+	if(BaseObject.CurrentRow.Row.IsNull("WorkOrderType")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderType"]) != 15)
+		 return null;
+	/*
+	if(BaseObject.ActiveSession.User.RecId != 1 &amp;&amp; BaseObject.ActiveSession.User.RecId != 2 &amp;&amp; BaseObject.ActiveSession.User.RecId != 1)
+	return null;
+	
+	*/
+	
+        stext_ = BaseObject.CurrentRow.Row["SText"].ToString();
+       
+            foreach(woiv in BaseObject.Data.Tables["MA_WorkOrderItemVariant"].Select("WorkOrderItemId is not null and SubNo is not null and SubNo&lt;1000"))
+                {
+                    query = "select isnull(SText,\'\') [beden] from dbo.GetItemSizes(\'"+stext_.ToString()+"\')  where ID=\'"+woiv["SubNo"].ToString()+"\'";
+                    dt_query = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_query",query);
+                   
+                    if(dt_query==null || dt_query.Rows.Count&lt;=0)
+                        return null;
+                        
+                      global:woiv_subno = 1000 + Convert.ToInt32(woiv["SubNo"]);
+                      foreach(woi in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("RecId is not null and SubNo is not null"))
+                        {
+                            if(Convert.ToInt32(woiv["WorkOrderItemId"]) == Convert.ToInt32(woi["RecId"]))
+                                {  
+                              
+                                   global:woi_subno =  woi["SubNo"].ToString();                                   
+                                   bedenler_ = dt_query.Rows[0]["beden"].ToString();
+                                   adetler_ = Convert.ToDecimal(woiv["Quantity"]);
+								global:woiv_item_id = woiv["WorkOrderItemId"].ToString();                               
+                                 //  MessageBox.Show(bedenler_+" = "+adetler_.ToString());
+                                
+
+                                    if(Convert.ToDecimal(adetler_) &gt;=1 &amp;&amp; Convert.ToDecimal(adetler_) &lt;=20)
+                                        global:dist_ = adetler_+2;
+
+                                    if( Convert.ToDecimal(adetler_) &gt;=21 &amp;&amp; Convert.ToDecimal(adetler_) &lt;=50)
+                                        global:dist_ = adetler_+5;
+
+                                     if(Convert.ToDecimal(adetler_) &gt;=51 &amp;&amp; Convert.ToDecimal(adetler_) &lt;=100)
+                                        global:dist_ = ((adetler_ * 10)/100) + adetler_;
+
+                                     if(Convert.ToDecimal(adetler_) &gt;=101 &amp;&amp; Convert.ToDecimal(adetler_) &lt;=200)
+                                        global:dist_ = ((adetler_ * 5)/100) + adetler_;
+
+                                     if(Convert.ToDecimal(adetler_) &gt;=200)
+                                        global:dist_ = ((adetler_ * 3)/100) + adetler_;
+
+										up_query = "update MA_WorkOrderItemVariant set Quantity=\'"+global:dist_.ToString().Replace(",",".")+"\' ";
+                                        up_query += " from MA_WorkOrderItem WOI with (nolock) ";
+                                        up_query += " where WOI.RecId=WorkOrderItemId ";
+                                        up_query += " and WOI.SubNo=\'"+global:woi_subno.ToString()+"\'";
+                                        up_query += " and MA_WorkOrderItemVariant.SubNo=\'"+global:woiv_subno.ToString()+"\'";
+                                        up_query += " and MA_WorkOrderItemVariant.WorkOrderItemId=\'"+global:woiv["WorkOrderItemId"].ToString()+"\'";//+1000
+                                        
+                                      //  MessageBox.Show(up_query.ToString());
+                                     UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,up_query);	
+				                    
+                                }
+                                       
+                        }   
+                        
+                }
+               
+}
+
+</ScriptText>
+</ScriptDefinition>

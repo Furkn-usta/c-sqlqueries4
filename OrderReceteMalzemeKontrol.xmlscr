@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderReceteMalzemeKontrol" Enabled="true" Priority="0" ScriptName="OrderReceteMalzemeKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 16.11.2023 17:41:48 	OrderReceteMalzemeKontrol	
+
+function OnBeforePost(sender,ev)
+{
+	if(BaseObject == null
+		|| BaseObject.CurrentRow == null
+		|| BaseObject.CurrentRow.Row == null	
+			)
+		return null;
+		
+		syc_ = BaseObject.Data.Tables["MA_RecipeItem"].Compute("Count(RecId)","RecipeType=1");
+	//	MessageBox.Show(syc_.ToString());
+	        if(syc_ == "0")
+	        {
+	     	
+	    			sender.ShowMessage("Satırda Malzeme Seçilmeden Kayıt Edilemez..{scr:OrderReceteMalzemeKontrol}");
+	    			ev.Cancel=true;
+	    			return null;
+	    		
+	        }
+
+}</ScriptText>
+</ScriptDefinition>

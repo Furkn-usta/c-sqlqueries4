@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PlanlamaTarihDeğiştirme" Enabled="true" Priority="0" ScriptName="PlanlamaTarihDeğiştirme">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories>
+    <History EditedBy="FurkanUsta" EntryDate="2023-04-07T00:00:00">
+      <Change>Planlama tarihi sadece 90 ve 1 recid olan kullanıcılar tarafından değiştirilebilir.</Change>
+    </History>
+  </Histories>
+  <ScriptText>//Generated on 7.04.2023 9:23:30
+/*
+Planlama tarihi sadece 90 ve 1 recid olan kullanıcılar tarafından değiştirilebilir.
+*/
+function OnBeforePPost(sender,eventArg)
+{
+	 if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("PlanDate"))
+		return null;
+		
+		if(BaseObject.ActiveSession.User.RecId == "1" || BaseObject.ActiveSession.User.RecId == "90")
+   				return null;
+    	
+		/*
+		Planlama Tarihi Değiştirme
+		*/
+		
+		old_date="01.01.1900";
+		
+		if (BaseObject.CurrentRow.Row["PlanDate", DataRowVersion.Original] != DBNull.Value)
+			old_date = Convert.ToDateTime(BaseObject.CurrentRow.Row["PlanDate", DataRowVersion.Original]);
+
+		new_date="01.01.1900";
+
+		if (BaseObject.CurrentRow.Row["PlanDate"] != DBNull.Value)
+			new_date = Convert.ToDateTime(BaseObject.CurrentRow.Row["PlanDate"].ToString());
+	
+		if(old_date != new_date)
+		{
+		sender.ShowMessage("Planlama Tarihi Sadece Yöneticiler Tarafından Değiştirilebilir.. {scr..PlanlamaTarihDeğiştirme}");
+		eventArg.Cancel=true;
+		return null;
+		}
+}</ScriptText>
+</ScriptDefinition>

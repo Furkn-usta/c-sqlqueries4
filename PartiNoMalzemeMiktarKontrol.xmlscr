@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PartiNoMalzemeMiktarKontrol" Enabled="true" Priority="0" ScriptName="PartiNoMalzemeMiktarKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 20.02.2024 09:50:44 PartiNoMalzemeMiktarKontrol
+
+function OnBeforePost(sender,ev)
+{
+	if(BaseObject == null 
+	    || BaseObject.CurrentRow == null
+	    || BaseObject.CurrentRow.Row == null
+		|| BaseObject.CurrentRow.Row.IsNull("ReceiptType")
+		 )
+			return null;
+			/*	*/
+			tarih_ = new DateTime(2024,01,31);
+		
+		date_ = Convert.ToDateTime(BaseObject.CurrentRow.Row["ReceiptDate"]);
+	
+		if(Convert.ToDateTime(date_) &lt;= Convert.ToDateTime(tarih_))
+			return null;
+		
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) == 140	|| Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) == 130	|| Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) == 17	)
+        {
+                foreach(ri in BaseObject.Data.Tables["IM_ReceiptItem"].Select("RecId is not null and InventoryId is not null and PartyNo is not null and ItemType=1")) 
+                        {
+	                        query2 = "select isnull(sum(isnull(RI.Quantity,0)),0) [mik_] from IM_ReceiptItem RI with (nolock) where RI.PartyNo=\'"+ri["PartyNo"].ToString()+"\' and RI.InventoryId=\'"+ri["InventoryId"].ToString()+"\' and RI.ReceiptType in (1,16,11)";
+	                         dt2=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt2",query2.ToString());
+	                          // MessageBox.Show(query2.ToString());
+	                         if(dt2 != null &amp;&amp; dt2.Rows.Count &gt; 0)
+	                         {
+	                         	 query3 = "select isnull(sum(isnull(RI.Quantity,0)),0) [mik_] from IM_ReceiptItem RI with (nolock) where RI.PartyNo=\'"+ri["PartyNo"].ToString()+"\' and RI.InventoryId=\'"+ri["InventoryId"].ToString()+"\' and RI.ReceiptType in (140,130,17)";
+		                      // MessageBox.Show(query3.ToString());
+		                         dt3=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt3",query3.ToString());
+		                           if(dt3 != null || dt3.Rows.Count &gt; 0)
+		                              {
+		                              	   mal_alim_mik = Convert.ToDecimal(dt2.Rows[0]["mik_"]);
+                                           
+                                           cikis_mik = Convert.ToDecimal(dt3.Rows[0]["mik_"]);
+                                           
+                                            cikis_satir_top =  0m;
+                                            
+                                            old_quantity= 0m;
+                                            
+                                             if (ri["Quantity", DataRowVersion.Original] != DBNull.Value)
+                                                 old_quantity = Convert.ToDecimal(ri["Quantity", DataRowVersion.Original]);
+                                        		
+                                             new_quantity = 0m;
+                                             if (ri["Quantity"] != DBNull.Value)
+                                             	new_quantity = Convert.ToDecimal(ri["Quantity"]);
+                                             	
+                                             if(new_quantity == old_quantity)     
+                                             { 
+                                                cikis_satir_top = cikis_mik;
+                                             }          
+                                             else if(new_quantity != old_quantity)    
+                                                  {
+                                                    if(new_quantity &gt; old_quantity)  
+                                                    {
+                                                          cikis_satir_top = new_quantity;
+                                                          }
+                                                    else if (new_quantity &lt; old_quantity)  
+                                                    {
+                                                      cikis_satir_top =  old_quantity;
+                                                    }
+                                                  }
+		                                     if(cikis_satir_top &gt; mal_alim_mik)
+		                                       {
+		                                        sender.ShowMessage(ri["PartyNo"].ToString()+" Numaralı Parti Numarasının Çıkışı Mal Alım veya Fason Giriş Miktarından Daha Büyüktür Kayıt Yapılamadı {..scr:PartiNoMalzemeMiktarKontrol}");
+		                                        ev.Cancel =true;
+		                                       }
+	                         }
+                        }			
+					}
+			}
+}</ScriptText>
+</ScriptDefinition>

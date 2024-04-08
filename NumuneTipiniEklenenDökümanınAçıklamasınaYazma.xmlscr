@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneTipiniEklenenDökümanınAçıklamasınaYazma" Enabled="true" Priority="0" ScriptName="NumuneTipiniEklenenDökümanınAçıklamasınaYazma">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 25.10.2023 09:23:07 
+function OnAfterSucceededPost(sender, ev)
+{
+	if( BaseObject == null 
+	|| BaseObject.CurrentRow == null 
+	|| BaseObject.CurrentRow.Row == null 
+	|| BaseObject.CurrentRow.Row.IsNull("InventoryType")
+	|| BaseObject.CurrentRow.Row.IsNull("RecId")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) != 99	
+	)
+		return null;
+		
+	sb = new StringBuilder();
+	sb.Clear();
+	
+	sb.AppendLine("select ");
+	sb.AppendLine(" isnull(SST.SampleTypeName,\'\') [sample_name]");
+	sb.AppendLine(",isnull(IA.RecId,0) [rec_id]");
+	sb.AppendLine("from IM_Item I with (nolock) ");
+	sb.AppendLine("left join MD_StyleSampleType SST with (nolock) on SST.RecId=I.StyleSampleTypeId ");
+	sb.AppendLine("left join IM_ItemAttachment IA with (nolock) on I.RecId=IA.InventoryId ");
+	sb.AppendLine("where  I.RecId=\'"+Convert.ToInt32(BaseObject.CurrentRow.Row["RecId"])+"\' and IA.Type=4 ");
+	sb_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "sb_dt",sb.ToString());
+	
+	 if(sb_dt == null || sb_dt.Rows.Count &lt;=0)
+           	        return null;
+  //   MessageBox.Show(sb.ToString());    	        
+	sp_name = sb_dt.Rows[0]["sample_name"].ToString();
+	recid_ =  sb_dt.Rows[0]["rec_id"].ToString();   
+	upd_query_mamul(recid_.ToString(),sp_name.ToString());         
+	}
+		
+
+function upd_query_mamul(rec,samplename)
+{
+	query = "update IM_ItemAttachment set Explanation =	\'"+samplename.ToString()+"\' where RecId = \'"+rec.ToString()+"\'";
+	//MessageBox.Show(query.ToString());
+
+		dt=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+        if(dt == null || dt.Rows.Count &lt;= 0)
+			    return null; 
+		
+}		</ScriptText>
+</ScriptDefinition>

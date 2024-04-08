@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderMüsteriSiparisiAlanTasima" Enabled="false" Priority="0" ScriptName="OrderMüsteriSiparisiAlanTasima">
+  <Events>
+    <Event Enabled="true" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="OrderReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>
+function OnBeforePost(sender,ev)
+
+{
+    if(BaseObject==null
+    ||BaseObject.CurrentRow==null
+    ||BaseObject.CurrentRow.Row==null   
+    ||Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"])!=2
+    )
+    return null;
+    
+    foreach (dr in BaseObject.Data.Tables["IM_OrderReceiptItem"].Select("WorkOrderReceiptItemId is not null"))
+    {
+    query="select WO.UD_OnOdeme [od] from MA_WorkOrder as WO with (nolock) where WO.RecId="+dr["WorkOrderReceiptItemId"];
+    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+
+    if(dt==null &amp;&amp; dt.Rows.Count&lt;0)
+    return null;
+
+    BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_OnOdeme",Convert.ToInt32(dt.Rows[0]["od"]));
+    }
+
+    
+	
+        
+	
+}
+</ScriptText>
+</ScriptDefinition>

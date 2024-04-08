@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Özel Alan Combobox Seçimi" Enabled="true" Priority="0" ScriptName="Özel Alan Combobox Seçimi">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChanged" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories>
+    <History EditedBy="Furkan Usta" EntryDate="2023-08-28T00:00:00">
+      <Change>Order ekranında açılan özel alandan seçilen komboboxtaki alanların içerisinde yazılı olan açıklamaları Genel Açıklama sekmesi gibi görebilmeyi sağlar.</Change>
+    </History>
+  </Histories>
+  <ScriptText>//Generated on 28.08.2023 14:50:59
+/*
+Order ekranında açılan özel alandan seçilen komboboxtaki alanların içerisinde yazılı olan açıklamaları Genel Açıklama sekmesi gibi görebilmeyi sağlar.
+*/
+function OnColumnChanged(sender, ev)
+{
+	if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null)
+		return null;
+	
+	if(BaseObject.Name!="TWorkOrderEN" 
+    || ev.Row.Table.TableName != "MA_WorkOrder" 
+    || ev.Row.IsNull("WorkOrderType") 
+    || Convert.ToInt32(ev.Row["WorkOrderType"]) != 15
+    || ev.Row.IsNull("UD_SelectedValue") 
+    || ev.Column.ColumnName != "UD_SelectedValue")
+         return null;
+         
+  	 	
+	/*
+	ud_sv="";
+ MessageBox.Show(ev.Row["UD_SelectedValue"].ToString());
+ */
+	 if(!ev.Row.IsNull("UD_SelectedValue") &amp;&amp; ev.Row["UD_SelectedValue"].ToString().Trim() != "")
+	 	{
+            ud_sv = ev.Row["UD_SelectedValue"].ToString();
+            rec_ = Convert.ToInt32(BaseObject.CurrentRow.Row["RecId"]);
+        }
+	    
+    if(ev.Row["UD_SelectedValue"].ToString().Trim() != "" &amp;&amp; ev.Column.ColumnName=="UD_SelectedValue" )
+    {
+ /*
+        name = "select FieldName from MD_DataField DF with (nolock) where DF.Explanation=\'"+ud_sv.ToString()+"\' and DF.TableName=\'MA_WorkOrder\'";
+        name_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "name_dt",name);	
+        MessageBox.Show(name.ToString());
+ */
+ 
+        ev.Row["UD_SelectedValue"].ToString();
+        query = "select isnull(WO."+ud_sv.ToString()+",\'\') [oz_al] from MA_WorkOrder WO with (nolock) where WO.RecId=\'"+rec_.ToString()+"\'";
+       // MessageBox.Show(query.ToString());
+        dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);	
+
+        if(dt == null || dt.Rows.Count&lt;=0)
+            return null;
+
+        oz_al_ = dt.Rows[0]["oz_al"].ToString();
+       	
+       	BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_SelectedValueText",oz_al_);
+   		//BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;(""+ud_sv.ToString()+"",oz_al_.ToString());
+   	
+    }
+    	
+}
+
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("WorkOrderType") 
+    || Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderType"]) != 15)
+		return null;
+//	MessageBox.Show("Before Post = "+BaseObject.CurrentRow.Row["UD_SelectedValue"].ToString());	
+
+	BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;(""+BaseObject.CurrentRow.Row["UD_SelectedValue"].ToString()+"",BaseObject.CurrentRow.Row["UD_SelectedValueText"].ToString());
+}</ScriptText>
+</ScriptDefinition>

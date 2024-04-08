@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderRotaZorunluAlan" Enabled="false" Priority="0" ScriptName="OrderRotaZorunluAlan">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 20.03.2023 14:56:30 OrderRotaZorunluAlan
+function OnBeforePost(sender,eventArg)
+{
+ if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null)
+    return null;
+	i = 0;
+	j = 0;
+	k = 0;
+  rota1_ = 0;
+  rota2_ = 0;
+  rota3_ = 0;
+	foreach(dr in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=1"))
+		{
+			j++;
+			i++;
+		//	MessageBox.Show("i:"+i.ToString());
+		//	MessageBox.Show("j:"+j.ToString());
+			/*25.03.24 eklendi*/
+				if (i==1)
+	      {
+	      rota1_ = Convert.ToInt32(dr["RouteId"]);
+	      }
+
+			  if (i==2)
+	      {
+	      rota2_ = Convert.ToInt32(dr["RouteId"]);
+	      }
+
+	      if (i==3)
+	      {
+	      rota3_ = Convert.ToInt32(dr["RouteId"]);
+	      }
+
+		}
+		
+	      if(i == 2) 
+	      {
+	        if((rota1_ == rota2_) &amp;&amp; rota3_ == 0)
+	        {
+	          if(rota1_ != 8)
+	          {
+				  sender.ShowMessage("2 Model Seçiliyken Sadece Takım Rotası Seçilebilir.! {scr:OrderRotaZorunluAlan} ");
+						eventArg.Cancel = true;
+						return null;
+	          }
+	        }
+	            if((rota1_ != rota2_) &amp;&amp; rota3_ == 0)
+	        {
+	          
+				  sender.ShowMessage("2 Model Seçiliyken Sadece Takım Rotası Seçilebilir.! {scr:OrderRotaZorunluAlan} ");
+						eventArg.Cancel = true;
+						return null;
+	         
+	        }
+	      }
+		
+    	foreach(dr in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=1 "))
+		{
+	
+		//	MessageBox.Show(i.ToString());
+			if(i==1)
+			{
+				if(Convert.ToInt32(dr["RouteId"]) == 8)
+					{
+					sender.ShowMessage("1 Model Seçiliyken Takım Rotası Seçilemez.! {scr:OrderRotaZorunluAlan} ");
+					eventArg.Cancel = true;
+					return null;
+					}
+			}
+		}
+		
+		    foreach(dr in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=1 "))
+				{
+			
+				//	MessageBox.Show(i.ToString());
+					if(j==3)
+					{
+						if(Convert.ToInt32(dr["RouteId"]) != 9)
+							{
+						sender.ShowMessage("3 Model Seçiliyken Sadece Yelekli Takım Rotası Seçilebilir.! {scr:OrderRotaZorunluAlan} ");
+							eventArg.Cancel = true;
+							return null;
+							}
+					}
+				}
+			
+}
+</ScriptText>
+</ScriptDefinition>

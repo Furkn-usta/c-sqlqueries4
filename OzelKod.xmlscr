@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OzelKod" Enabled="true" Priority="0" ScriptName="OzelKod">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 1.02.2023 15:38:42
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null  || BaseObject.CurrentRow.Row.IsNull("ReceiptType") ||  Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"])!=120)
+	return null;
+		foreach (ri in BaseObject.Data.Tables["IM_ReceiptItem"].Select("PackagingListItemId is not null"))
+			{
+			query="select SpecialCode from IM_PackagingListItem where RecId="+ri["PackagingListItemId"].ToString();
+			dt=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query); 
+				if(dt!=null)
+			{
+						ri.SetField&lt;|String|&gt;("SpecialCode",dt.Rows[0][0].ToString());
+
+			}
+			}
+	
+	}</ScriptText>
+</ScriptDefinition>

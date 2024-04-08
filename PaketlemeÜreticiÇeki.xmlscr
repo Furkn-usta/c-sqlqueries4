@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PaketlemeÜreticiÇeki" Enabled="true" Priority="0" ScriptName="PaketlemeÜreticiÇeki">
+  <Events>
+    <Event Enabled="true" ObjectName="PackagingListEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="PackagingListEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 10.01.2023 16:10:26
+
+function OnBeforePost(sender, e)
+
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null )
+	   return null;
+	   
+	   	query="select top 1 f.CurrentAccountName [cari] from MA_WorkOrder wo left join MA_WorkOrderItem woi on woi.WorkOrderId=wo.RecId left join MA_WorkOrderProduction wop on wop.WorkOrderItemId=woi.RecId left join FI_Account f on f.RecId=wop.CurrentAccountId where wop.ProcessId=5 and wo.RecId=\'"+BaseObject.CurrentRow.Row["WorkOrderId"].ToString()+"\'";
+	 	dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query);
+	 		
+	      if(dt==null || dt.Rows.Count&lt;0 )
+		return null;
+		
+		BaseObject.CurrentRow.Row.SetField&lt;|String|&gt;("UD_Uretici",dt.Rows[0]["cari"].ToString());
+		
+	   }</ScriptText>
+</ScriptDefinition>

@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneReçeteKimyasalKontrol" Enabled="true" Priority="0" ScriptName="NumuneReçeteKimyasalKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 26.01.2024 16:26:50 NumuneReçeteKimyasalKontrol
+
+function OnBeforePost(sender,eventArg)
+{
+	if (BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null 
+    || BaseObject.CurrentRow.Row.IsNull("IsSample") 
+	|| BaseObject.CurrentRow.Row.IsNull("InventoryType"))
+		return null;
+
+     if((BaseObject.CurrentRow.Row["IsSample"].ToString().Trim() == "True" &amp;&amp; BaseObject.CurrentRow.Row["InventoryType"].ToString().Trim() == "99") 
+        || (BaseObject.CurrentRow.Row["IsSample"].ToString().Trim() == "True" &amp;&amp; BaseObject.CurrentRow.Row["InventoryType"].ToString().Trim() == "100") )
+        {
+            foreach(ri in BaseObject.Data.Tables["MA_RecipeItem"].Select("InventoryId is not null and ItemType=1"))
+            {
+                
+                if(!ri.IsNull("UD_Kim1"))
+                {
+                    query = "select SUBSTRING(isnull(I.InventoryCode,\'\'),1,2)[km] from IM_Item I with (nolock) ";
+                    query += "  where I.InventoryName=\'"+ri["UD_Kim1"].ToString()+"\'";
+                    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+                        if(dt == null || dt.Rows.Count &lt;= 0)
+                            return null;
+                    km1_ = dt.Rows[0]["km"].ToString();
+
+                    if(km1_.ToString().Trim() != "KM")
+                    {
+                    sender.ShowMessage("Kimyasal Alanlarında Sadece Kimyasal Seçilebilir.");
+                    eventArg.Cancel = true;
+                    return null;
+                    }
+                }
+                if(!ri.IsNull("UD_Kim2"))
+                {
+                    query = "select SUBSTRING(isnull(I.InventoryCode,\'\'),1,2)[km]  from IM_Item I with (nolock) ";
+                    query += "  where I.InventoryName=\'"+ri["UD_Kim2"].ToString()+"\'";
+                   dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+                        if(dt == null || dt.Rows.Count &lt;= 0)
+                            return null;
+                    km2_ = dt.Rows[0]["km"].ToString();
+
+                    if(km2_.ToString().Trim() != "KM")
+                    {
+                    sender.ShowMessage("Kimyasal Alanlarında Sadece Kimyasal Seçilebilir.");
+                    eventArg.Cancel = true;
+                    return null;
+                    }
+                }
+                if(!ri.IsNull("UD_Kim3"))
+                {
+                    query = "select SUBSTRING(isnull(I.InventoryCode,\'\'),1,2) [km] from IM_Item I with (nolock) ";
+                    query += "  where I.InventoryName=\'"+ri["UD_Kim3"].ToString()+"\'";
+                    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+                        if(dt == null || dt.Rows.Count &lt;= 0)
+                            return null;
+                    km3_ = dt.Rows[0]["km"].ToString();
+
+                    if(km3_.ToString().Trim() != "KM")
+                    {
+                    sender.ShowMessage("Kimyasal Alanlarında Sadece Kimyasal Seçilebilir.");
+                    eventArg.Cancel = true;
+                    return null;
+                    }
+                }
+                if(!ri.IsNull("UD_Kim4"))
+                {
+                    query = "select SUBSTRING(isnull(I.InventoryCode,\'\'),1,2) [km] from IM_Item I with (nolock) ";
+                    query += "where I.InventoryName=\'"+ri["UD_Kim4"].ToString()+"\'";
+                    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+                        if(dt == null || dt.Rows.Count &lt;= 0)
+                            return null;
+                    km4_ = dt.Rows[0]["km"].ToString();
+
+                    if(km4_.ToString().Trim() != "KM")
+                    {
+                    sender.ShowMessage("Kimyasal Alanlarında Sadece Kimyasal Seçilebilir.");
+                    eventArg.Cancel = true;
+                    return null;
+                    }
+                }
+                if(!ri.IsNull("UD_Kim5"))
+                {
+                    query = "select SUBSTRING(isnull(I.InventoryCode,\'\'),1,2) [km] from IM_Item I with (nolock) ";
+                    query += " where I.InventoryName=\'"+ri["UD_Kim5"].ToString()+"\'";
+                    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+                        if(dt == null || dt.Rows.Count &lt;= 0)
+                            return null;
+                    km5_ = dt.Rows[0]["km"].ToString();
+
+                    if(km5_.ToString().Trim() != "KM")
+                    {
+                    sender.ShowMessage("Kimyasal Alanlarında Sadece Kimyasal Seçilebilir.");
+                    eventArg.Cancel = true;
+                    return null;
+                    }
+                }
+                if(!ri.IsNull("UD_Kim6"))
+                {
+                    query = "select SUBSTRING(isnull(I.InventoryCode,\'\'),1,2) [km] from IM_Item I with (nolock) ";
+                    query += "  where I.InventoryName=\'"+ri["UD_Kim6"].ToString()+"\'";
+                    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+                        if(dt == null || dt.Rows.Count &lt;= 0)
+                            return null;
+                    km6_ = dt.Rows[0]["km"].ToString();
+                    
+                    if(km6_.ToString().Trim() != "KM")
+                    {
+                    sender.ShowMessage("Kimyasal Alanlarında Sadece Kimyasal Seçilebilir.");
+                    eventArg.Cancel = true;
+                    return null;
+                    }
+                }
+               
+            }
+        }	
+}</ScriptText>
+</ScriptDefinition>

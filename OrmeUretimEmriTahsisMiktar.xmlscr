@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrmeUretimEmriTahsisMiktar" Enabled="false" Priority="0" ScriptName="OrmeUretimEmriTahsisMiktar">
+  <Events>
+    <Event Enabled="true" ObjectName="WorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="WorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 21.02.2022 11:20:32
+
+function OnBeforePost(sender, ev) {
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null || BaseObject.CurrentRow.Row.IsNull("WorkOrderType") || Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderType"]) != 3)
+		return null;
+
+    wRecId = BaseObject.CurrentRow.Row["RecId"].ToString();
+    companyId = BaseObject.ActiveSession.Company.RecId.ToString();
+
+    sql = @"select isnull(sum(A.NetQuantity),0) NetQuantity
+        from(select isnull(IA.Quantity, 0) NetQuantity
+        from MA_WorkOrder W with (nolock)
+        left join IM_ItemAllocation IA with (nolock) on(IA.WorkOrderItemId in (select WI.RecId from MA_WorkOrderItem WI where WI.WorkOrderId = W.RecId))
+        left join IM_ReceiptItem IRI with (nolock) on(IRI.RecId = IA.InventoryReceiptItemId)
+        left join IM_ItemVariant IV with (nolock) on(IV.RecId = IA.InventoryVariantId)
+        left join IM_VariantItem V1 with (nolock) on(V1.RecId = IV.Variant1Id)
+        left join IM_VariantItem V2 with (nolock) on(V2.RecId = IV.Variant2Id)
+        left join IM_VariantItem V3 with (nolock) on(V3.RecId = IV.Variant3Id)
+        left join IM_VariantItem V4 with (nolock) on(V4.RecId = IV.Variant4Id)
+        left join IM_VariantItem V5 with (nolock) on(V5.RecId = IV.Variant5Id)
+        left join IM_Receipt IR with (nolock) on(IR.RecId = IRI.InventoryReceiptId)
+        left join FI_Account C with (nolock) on(C.RecId = IR.CurrentAccountId)
+        left join FI_Account CS with (nolock) on(CS.RecId = IR.ShipToCurrentAccountId)
+        left join IM_Item I with (nolock) on(I.RecId = IRI.InventoryId)
+        left join MD_Forex MF with (nolock) on(MF.RecId = IRI.ForexId)
+        where W.CompanyId = companyId
+        and IA.InventoryReceiptItemId is not null
+        and W.RecId = wRecId
+        and IRI.InventoryId is not null and IRI.ItemType = 1
+        union all
+        select isnull(IA.Quantity, 0) NetQuantity
+        from MA_WorkOrder W with (nolock)
+        left join IM_ItemAllocation IA with (nolock) on(IA.WorkOrderItemId in (select WI.RecId from MA_WorkOrderItem WI where WI.WorkOrderId = W.RecId))
+        left join IM_OrderReceiptItem ORI with (nolock) on(ORI.RecId = IA.OrderReceiptItemId)
+        left join IM_ItemVariant IV with (nolock) on(IV.RecId = IA.InventoryVariantId)
+        left join IM_VariantItem V1 with (nolock) on(V1.RecId = IV.Variant1Id)
+        left join IM_VariantItem V2 with (nolock) on(V2.RecId = IV.Variant2Id)
+        left join IM_VariantItem V3 with (nolock) on(V3.RecId = IV.Variant3Id)
+        left join IM_VariantItem V4 with (nolock) on(V4.RecId = IV.Variant4Id)
+        left join IM_VariantItem V5 with (nolock) on(V5.RecId = IV.Variant5Id)
+        left join IM_OrderReceipt O with (nolock) on(O.RecId = ORI.OrderReceiptId)
+        left join FI_Account C with (nolock) on(C.RecId = O.CurrentAccountId)
+        left join IM_Item I with (nolock) on(I.RecId = ORI.InventoryId)
+        left join MD_Forex MF with (nolock) on(MF.RecId = ORI.ForexId)
+        where W.CompanyId = companyId and I.RecId is not null
+        and IA.OrderReceiptItemId is not null
+        and W.RecId = wRecId
+        and ORI.InventoryId is not null and ORI.ItemType = 1
+        union all
+        select isnull(IRI.Quantity, 0) NetQuantity
+        from MA_WorkOrder W with (nolock)
+        left join IM_ReceiptItem IRI with (nolock) on(IRI.WorkOrderReceiptItemId in (select WI.RecId from MA_WorkOrderItem WI where WI.WorkOrderId = W.RecId))
+        left join IM_Receipt IR with (nolock) on(IR.RecId = IRI.InventoryReceiptId)
+        left join IM_Invoice INV with (nolock) on(IR.InvoiceId = INV.RecId)
+        left join FI_Account C with (nolock) on(C.RecId = IR.CurrentAccountId)
+        left join FI_Account CS with (nolock) on(CS.RecId = IR.ShipToCurrentAccountId)
+        left join SM_Service S with (nolock) on(S.RecId = IRI.ServiceCardId)
+        left join MD_Forex MF with (nolock) on(MF.RecId = IRI.ForexId)
+        where W.CompanyId = companyId
+        and IRI.WorkOrderReceiptItemId is not null and INV.RecId is not null
+        and W.RecId = wRecId
+        and IRI.ServiceCardId is not null and IRI.ItemType = 2 and INV.ReceiptType in (1, 11, 22, 138, 126, 139)
+    )A";
+
+    sql = sql.Replace("companyId", companyId);
+    sql = sql.Replace("wRecId", wRecId);
+
+    r = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "r", sql);
+
+    if (r == null || r.Rows.Count &lt;= 0)
+        return null;
+
+    wQty = 0.0m;
+
+    if (!BaseObject.CurrentRow.Row.IsNull("Quantity"))
+        wQty = Convert.ToDecimal(BaseObject.CurrentRow.Row["Quantity"]);
+
+    if (Convert.ToDecimal(r.Rows[0]["NetQuantity"]) != wQty)
+        BaseObject.ShowMessage("İplik ihtiyaç tahsis miktarlari ile üretim emri miktari uyuşmamaktadir! {scr:OrmeUretimEmriTahsisMiktar}", ConstantStr.Warning); 
+}</ScriptText>
+</ScriptDefinition>

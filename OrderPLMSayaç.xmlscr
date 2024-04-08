@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderPLMSayaç" Enabled="true" Priority="0" ScriptName="OrderPLMSayaç">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 19.12.2023 10:26:23 OrderPLMSayaç
+
+function OnBeforePost(sender,ev)
+{
+	if(BaseObject == null 
+	    || BaseObject.CurrentRow == null
+	    || BaseObject.CurrentRow.Row == null
+		|| BaseObject.CurrentRow.Row.IsNull("IsSample"))
+			return null;
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) == 1)
+		{	
+			if(BaseObject.ActiveSession.User.RecId == 155 &amp;&amp; BaseObject.ActiveSession.Company.RecId == 14)		
+			{
+				if(Convert.ToInt32(BaseObject.CurrentRow.Row["UD_PLMCounterControl"]) == 1)
+					return null;
+							
+					query = "select max(isnull(WO.UD_PLMCounter,0)) [num_or] from MA_WorkOrder WO with (nolock) where WO.IsSample=1 and WO.CompanyId=\'"+BaseObject.ActiveSession.Company.RecId.ToString()+"\'";
+					//MessageBox.Show(query.ToString());
+					dt=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+			        if(dt == null || dt.Rows.Count &lt;= 0)
+						    return null; 
+				 	BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounter",Convert.ToInt32(dt.Rows[0]["num_or"])+1);
+				 	BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounterControl",1);
+			}
+		}
+}
+</ScriptText>
+</ScriptDefinition>

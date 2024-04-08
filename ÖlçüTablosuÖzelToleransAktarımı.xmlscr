@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ÖlçüTablosuÖzelToleransAktarımı" Enabled="true" Priority="0" ScriptName="ÖlçüTablosuÖzelToleransAktarımı">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 17.07.2023 14:20:12
+function OnAfterSucceededPost(sender,ev)
+{
+    if(BaseObject == null
+    || BaseObject.CurrentRow == null
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("InventoryType")
+    || Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) != 100
+    )
+    return null;
+
+    foreach(ssi in BaseObject.Data.Tables["MA_SizeSetItem"].Select("SizeSetParameterId is not null and UD_Tolerans is not null"))
+ 	{
+        size_set_para_id = ssi["SizeSetParameterId"].ToString();
+        up_query = "update MA_SizeSetParameter set Tolerance = \'"+ssi["UD_Tolerans"].ToString()+"\' where RecId=\'"+size_set_para_id.ToString()+"\'";       
+        UtilityFunctions.SqlCustomNonQuery(BaseObject.Connection, BaseObject.Transaction, up_query);
+        //MessageBox.Show(up_query.ToString());
+        
+    }
+    BaseObject.Get(BaseObject.CurrentRow.Row["RecId"]);
+}
+</ScriptText>
+</ScriptDefinition>

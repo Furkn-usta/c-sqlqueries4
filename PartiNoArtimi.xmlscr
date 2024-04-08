@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Parti No Artimi" Enabled="false" Priority="0" ScriptName="PartiNoArtimi">
+  <Events>
+    <Event Enabled="true" ObjectName="WorkOrderEN" />
+    <Event Enabled="true" EventName="TableNewRow" FunctionName="OnTableNewRow" ObjectName="WorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 13.02.2016 11:19:48
+function OnTableNewRow(sender, eventArg)
+{
+	if (BaseObject != null)
+	{
+			var dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, 
+			"MA_WorkOrder",
+			"select top 1 WorkOrderNo from MA_WorkOrder where WorkOrderNo NOT LIKE \'%-%\' ORDER BY CONVERT(BIGINT,WorkOrderNo) DESC");
+			
+			var pNo = "1";
+			
+			if (dt != null &amp;&amp; dt.Rows.Count &gt; 0)
+			{
+				var sonPNo = dt.Rows[0][0].ToString();
+				var npNo = Convert.ToInt64(sonPNo) + 1;
+				pNo = npNo.ToString();
+			//	var sonTNo = dt.Rows[0][1].ToString();
+				
+				/*if (Convert.ToInt32(sonTNo) &lt; 99)
+				{
+					var tNo = Convert.ToInt32(sonTNo) + 1;
+					pNo = Convert.ToInt64(sonPNo).ToString() + "-" + tNo.ToString();
+				}
+				else
+				{
+					var bNo = Convert.ToInt64(sonPNo) + 1;
+					pNo = bNo.ToString() + "-" + Convert.ToInt32(sonTNo).ToString();
+				}*/
+			}
+			
+			var orderRecId = eventArg.Row["OrderItemId"].ToString();
+			BaseObject.ShowMessage(orderRecId);
+			
+			//eventArg.Row.SetField&lt;|string|&gt;("WorkOrderNo", pNo.ToString());
+		
+	}
+}</ScriptText>
+</ScriptDefinition>

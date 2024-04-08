@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Orme Uretim Emri Fiyat" Enabled="true" Priority="0" ScriptName="OrmeUretimEmriFiyat">
+  <Events>
+    <Event Enabled="true" ObjectName="WorkOrderProductionEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="WorkOrderProductionEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 21.02.2022 09:43:55
+
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.Data == null || BaseObject.Data.Tables == null || !BaseObject.Data.Tables.Contains("MA_WorkOrderProduction"))
+		return null;
+	
+	wops = BaseObject.Data.Tables["MA_WorkOrderProduction"].Select("");
+	
+	if(wops.Length &lt;= 0)
+		return 0;
+	
+	dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", "select isnull(UnitPrice, 0) UnitPrice from MA_WorkOrder W with(nolock) where W.WorkOrderType = 3 and W.RecId = (select WorkOrderId from MA_WorkOrderItem with (nolock) where RecId = " + wops[0]["WorkOrderItemId"].ToString() + ")");
+	
+	if(dt == null || dt.Rows.Count &lt;= 0)
+		return null;
+	
+	foreach(wop in wops)
+	{
+		wop.SetField&lt;|decimal|&gt;("UnitPrice", dt.Rows[0]["UnitPrice"]);
+	}
+}</ScriptText>
+</ScriptDefinition>

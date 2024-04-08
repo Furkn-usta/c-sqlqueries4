@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderSozlesmeKontrol" Enabled="true" Priority="0" ScriptName="OrderSozlesmeKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>
+//Generated on 04.07.2023 09:00:50
+
+/*
+Sözleşmesi girilen müşteriye oluşturulan order için sözleşme tarihi ve order tarihi kontrol edilerek 1 hafta kaldi ise uyari verip kayit edecek order tarihi sözleşme tarihini geçti ise kaydi engelleyecek ve mail atacaktir.
+*/
+
+function OnBeforePost(sender,ev)
+{
+    if(BaseObject == null
+    || BaseObject.CurrentRow == null
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("CurrentAccountId")
+    || BaseObject.CurrentRow.Row.IsNull("WorkOrderDate")
+    || BaseObject.CurrentRow.Row.IsNull("WorkOrderNo"))
+    return null;
+
+    sozlesme_mail_konu ="Sözleşme Bitiş Tarihi Kontrol";
+    currentid_ = BaseObject.CurrentRow.Row["CurrentAccountId"].ToString();
+    order_date_ = Convert.ToDateTime(BaseObject.CurrentRow.Row["WorkOrderDate"]);
+    order_no_ = BaseObject.CurrentRow.Row["WorkOrderNo"].ToString();
+    
+  	const_mail_adress="mail@enkayyazilim.com;mail@enkayyazilim.com";
+
+    query_contract = "select top 1  isnull(C.EndDate,\'\') [end_date], isnull((select isnull(HE.EMail,\'\') from HR_Employee HE with (nolock) where HE.RecId=isnull(C.EmployeeId,\'\')),\'\') [mail_add]  from SM_Contract C with (nolock) where C.ReceiptType=2 and C.CurrentAccountId="+currentid_+" order by C.ReceiptDate desc";
+    contract_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "contract_dt",query_contract);
+     if(contract_dt==null || contract_dt.Rows.Count&lt;=0)
+       return null;
+	
+//	MessageBox.Show(query_contract);
+	cont_date = contract_dt.Rows[0]["end_date"].ToString();
+	m_adress = contract_dt.Rows[0]["mail_add"].ToString();
+ 
+    query_fark = "select datediff(day,convert(datetime,\'"+order_date_.ToString()+"\',104),convert(datetime,\'"+cont_date.ToString()+"\',104))";
+    fark_dt =  UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "fark_dt",query_fark);
+     if(fark_dt ==null || fark_dt.Rows.Count&lt;=0)
+       return null;
+
+	
+	
+    count_ = Convert.ToInt32(fark_dt.Rows[0][0]);
+
+    if(count_ &lt;= 0)
+    {
+        sender.ShowMessage("Order Tarihi Sözleşme Tarihinden Büyük Olamaz...{scr:OrderSozlesmeKontrol} ST= "+cont_date.ToString());
+        ev.Cancel = true ;
+        return null;
+    }
+    else if(count_&gt;0 &amp;&amp; count_&lt;=7)
+    {
+     order_no_ = order_no_ + " Numarali Orderin Sözleşme Tarihi 1 Hafta İçerisinde Sonlanacaktir. {scr..OrderSozlesmeKontrol}"; 
+     OnSendMail(m_adress.ToString(),sozlesme_mail_konu.ToString(),order_no_.ToString());
+     OnSendMail(const_mail_adress.ToString(),sozlesme_mail_konu.ToString(),order_no_.ToString());
+	}
+	else
+	return null;
+}
+   
+
+function OnSendMail(mail_adress, value1,value2)
+{
+/**/
+    tms = BaseObject.Container.Resolve&lt;|TaskMessageService|&gt;("TaskMessageService");
+	mail_adress_ = "";
+	if(!DBNull.Value.Equals(mail_adress_))
+		mail_adress_ = mail_adress.ToString();
+    tms.SendEmail(mail_adress_ , value1, value2);
+
+sender.ShowMessage(mail_adress+" - "+value1+" - "+value2);
+}
+
+
+</ScriptText>
+</ScriptDefinition>

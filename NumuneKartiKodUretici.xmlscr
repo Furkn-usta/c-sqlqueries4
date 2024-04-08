@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneKartiKodUretici" Enabled="true" Priority="0" ScriptName="NumuneKartiKodUretici">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 3.04.2024 11:09:46 NumuneKartiKodUretici
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("InventoryType")
+    || BaseObject.CurrentRow.Row.IsNull("IsSample")   
+    || BaseObject.CurrentRow.Row.IsNull("UD_PLMCounterControl")    
+    || BaseObject.CurrentRow.Row["UD_PLMCounterControl"].ToString() == "True"
+    )
+		return null;
+	inv_code = "";
+    if(Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) == 100   &amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) == 1)
+    {
+    	sb = new StringBuilder();
+        sb.Clear();
+        sb.AppendLine("select cast(isnull(X.[counter],0) as int )[counter]");
+        sb.AppendLine(",substring(cast(isnull(X.[year],0) as nvarchar(max)),3,2)  [yil]");
+        sb.AppendLine(",case when len(cast(isnull(X.month,0) as nvarchar(max))) = 1 then \'0\'+cast(X.month as nvarchar(max))");
+        sb.AppendLine("else cast(isnull(X.month,0) as nvarchar(max)) end [month]");
+        sb.AppendLine("from (");
+        sb.AppendLine("select max(isnull(I.UD_PLMCounter,0)) [counter] , (datepart(year,GETDATE())) [year] , (datepart(MONTH,GETDATE())) [month] from IM_Item I with (nolock) where I.IsSample=1 and I.InventoryType=100");
+        sb.AppendLine(")X");
+
+       // MessageBox.Show(sb.ToString());
+        dt_sb = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb",sb.ToString());
+        if(dt_sb != null &amp;&amp; dt_sb.Rows.Count &gt; 0)
+        {
+             if(Convert.ToInt32(dt_sb.Rows[0]["counter"]) == 0)	
+             {
+             	sayac_ = Convert.ToInt32(dt_sb.Rows[0]["counter"])+1;
+                BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounter",Convert.ToInt32(sayac_));
+                BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounterControl",1);     
+                //inv_code = "N"+dt_sb.Rows[0]["yil"].ToString()+dt_sb.Rows[0]["month"].ToString()+"//"+"000"+sayac_.ToString();
+                inv_code = "N"+dt_sb.Rows[0]["yil"].ToString()+dt_sb.Rows[0]["month"].ToString()+"/"+"0001";
+              }	
+              else
+              {
+                if(Convert.ToInt32(dt_sb.Rows[0]["counter"])&gt;=1 &amp;&amp; Convert.ToInt32(dt_sb.Rows[0]["counter"]) &lt; 9)
+                {
+                  	sayac_ = Convert.ToInt32(dt_sb.Rows[0]["counter"])+1;
+                BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounter",Convert.ToInt32(sayac_));
+                 BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounterControl",1); 
+                  inv_code = "N"+dt_sb.Rows[0]["yil"].ToString()+dt_sb.Rows[0]["month"].ToString()+"/"+"000"+sayac_.ToString();
+                }
+                else if(Convert.ToInt32(dt_sb.Rows[0]["counter"])&gt;=9 &amp;&amp; Convert.ToInt32(dt_sb.Rows[0]["counter"]) &lt; 99)
+                {
+                  	sayac_ = Convert.ToInt32(dt_sb.Rows[0]["counter"])+1;
+                BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounter",Convert.ToInt32(sayac_));
+                 BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounterControl",1); 
+                  inv_code = "N"+dt_sb.Rows[0]["yil"].ToString()+dt_sb.Rows[0]["month"].ToString()+"/"+"00"+sayac_.ToString();
+                }
+                else if(Convert.ToInt32(dt_sb.Rows[0]["counter"])&gt;=99 &amp;&amp; Convert.ToInt32(dt_sb.Rows[0]["counter"]) &lt; 999)
+                {
+                  	sayac_ = Convert.ToInt32(dt_sb.Rows[0]["counter"])+1;
+                BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounter",Convert.ToInt32(sayac_));
+                 BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounterControl",1); 
+                  inv_code = "N"+dt_sb.Rows[0]["yil"].ToString()+dt_sb.Rows[0]["month"].ToString()+"/"+"0"+sayac_.ToString();
+                }
+                 else if(Convert.ToInt32(dt_sb.Rows[0]["counter"])&gt;=999 &amp;&amp; Convert.ToInt32(dt_sb.Rows[0]["counter"]) &lt; 9999)
+                {
+                sayac_ = Convert.ToInt32(dt_sb.Rows[0]["counter"])+1;
+                BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounter",Convert.ToInt32(sayac_));
+                 BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_PLMCounterControl",1); 
+                  inv_code = "N"+dt_sb.Rows[0]["yil"].ToString()+dt_sb.Rows[0]["month"].ToString()+"/"+sayac_.ToString();
+                }
+                
+              }
+              //MessageBox.Show(inv_code.ToString());
+               BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("InventoryCode",inv_code.ToString());
+        }
+        }
+}
+
+
+
+
+
+
+
+
+</ScriptText>
+</ScriptDefinition>

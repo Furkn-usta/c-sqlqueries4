@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderaNumuneTipiTasima" Enabled="true" Priority="0" ScriptName="OrderaNumuneTipiTasima">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 13.05.2023 11:44:01
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null )
+		return null;
+		
+    if(!BaseObject.CurrentRow.Row.IsNull("IsSample") &amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"])== 1)
+    foreach(wo in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=1 ")) 
+ 	{
+    
+    
+     veri = string.Empty;	
+    query ="select SST.SampleTypeCode,SST.SampleTypeName,* from IM_Item I with (nolock) left join MD_StyleSampleType SST with (nolock) on SST.RecId=I.StyleSampleTypeId where  I.RecId="+wo["InventoryId"].ToString();
+    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query);
+    	if(dt!=null &amp;&amp; dt.Rows.Count&gt;0 )
+			{
+		
+			veri=dt.Rows[0][0].ToString();
+			veri+=" -"+dt.Rows[0][1].ToString();
+		
+			
+		wo.SetField&lt;|String|&gt;("Explanation",veri.ToString());
+			veri="";
+			}
+    
+    
+    }
+}</ScriptText>
+</ScriptDefinition>

@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderTarihDeğiştirme" Enabled="true" Priority="0" ScriptName="OrderTarihDeğiştirme">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 6.04.2023 10:23:30
+function OnBeforePost(sender,eventArg)
+{
+	 if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("UD_Control")
+    || BaseObject.CurrentRow.Row["UD_Control"].ToString() == "False" )
+	    return null;
+	     date = DateTime.Now.ToLongDateString();
+		
+	     im_on = BaseObject.CurrentRow.Row["UD_Control"].ToString();   
+	    if(im_on=="True")
+	    {				
+			BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("PlanDate",date.ToString()); 
+		}
+		/*
+			old_date="01.01.1900";
+		
+		if (BaseObject.CurrentRow.Row["PlanDate", DataRowVersion.Original] != DBNull.Value)
+			old_date = Convert.ToDateTime(BaseObject.CurrentRow.Row["PlanDate", DataRowVersion.Original]);
+
+		new_date="01.01.1900";
+
+		if (BaseObject.CurrentRow.Row["PlanDate"] != DBNull.Value)
+			new_date = Convert.ToDateTime(BaseObject.CurrentRow.Row["PlanDate"].ToString());
+	
+		if(old_date != new_date)
+		{
+			if(BaseObject.ActiveSession.User.RecId == "1" || BaseObject.ActiveSession.User.RecId == "12")
+   				return null;
+   		else
+   			{
+			sender.ShowMessage("Bu Değerler Sadece Yöneticiler Tarafından Değiştirilebilir.. {scr..OrderTarihDeğiştirme}");
+			eventArg.Cancel=true;
+			return null;
+			}
+		}*/
+		
+		
+}
+
+function OnBeforePPost(sender,eventArg)
+{
+	 if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("PlanDate"))
+		return null;
+		
+		if(BaseObject.ActiveSession.User.RecId == "1" || BaseObject.ActiveSession.User.RecId == "12")
+   				return null;
+    	
+		/*
+		Planlama Tarihi Değiştirme
+		*/
+		
+		old_date="01.01.1900";
+		
+		if (BaseObject.CurrentRow.Row["PlanDate", DataRowVersion.Original] != DBNull.Value)
+			old_date = Convert.ToDateTime(BaseObject.CurrentRow.Row["PlanDate", DataRowVersion.Original]);
+
+		new_date="01.01.1900";
+
+		if (BaseObject.CurrentRow.Row["PlanDate"] != DBNull.Value)
+			new_date = Convert.ToDateTime(BaseObject.CurrentRow.Row["PlanDate"].ToString());
+	
+		if(old_date != new_date)
+		{
+		sender.ShowMessage("Bu Değerler Sadece Yöneticiler Tarafından Değiştirilebilir.. {scr..OrderTarihDeğiştirme}");
+		eventArg.Cancel=true;
+		return null;
+		}
+}</ScriptText>
+</ScriptDefinition>

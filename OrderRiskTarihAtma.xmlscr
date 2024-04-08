@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderRiskTarihAtma" Enabled="true" Priority="0" ScriptName="OrderRiskTarihAtma">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 29.03.2024 12:11:09  OrderRiskTarihAtma
+function OnAfterSucceededPost(sender, ev)
+{
+	if( BaseObject == null 
+	|| BaseObject.CurrentRow == null 
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("UD_RiskAddCheck")//UD_ControlTasima--UD_RiskAddCheck
+  || BaseObject.CurrentRow.Row.IsNull("RecId")
+	|| BaseObject.CurrentRow.Row["UD_RiskAddCheck"].ToString()=="True"
+	)
+		return null;
+
+
+      updt_date = BaseObject.CurrentRow.Row["UpdatedAt"].ToString();
+      rec_Id = BaseObject.CurrentRow.Row["RecId"].ToString();
+      
+      query = " select COUNT(WOE.RecId) [rec] from MA_WorkOrderExplanation WOE with (nolock) where WOE.ExplanationType = 5 and  WOE.WorkOrderId=\'"+rec_Id.ToString()+"\' ";
+     // MessageBox.Show(query);
+      dt2 = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt2",query);
+      if(dt2!=null &amp;&amp; dt2.Rows.Count&gt;0 &amp;&amp; dt2.Rows[0]["rec"].ToString().Trim() == "1")
+      {
+		//MessageBox.Show(BaseObject.CurrentRow.Row["UD_RiskAddCheck"].ToString());
+        update_sorgu ="update  MA_WorkOrder set UD_RiskAddCheck=1,UD_RiskDate=convert(date,\'"+updt_date+"\',104)";//UD_RiskDate--UD_POT
+        update_sorgu +=" where RecId=\'"+rec_Id.ToString()+"\'";
+        //MessageBox.Show(update_sorgu.ToString());
+        UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,update_sorgu.ToString()); 
+      }
+
+}</ScriptText>
+</ScriptDefinition>

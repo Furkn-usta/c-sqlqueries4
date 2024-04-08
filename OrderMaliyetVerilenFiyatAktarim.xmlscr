@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderMaliyetVerilenFiyatAktarim" Enabled="true" Priority="0" ScriptName="OrderMaliyetVerilenFiyatAktarim">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 16.11.2023 17:04:25 OrderMaliyetVerilenFiyatAktarim
+
+function OnBeforePost(sender,ev)
+{
+	if(BaseObject == null
+		|| BaseObject.CurrentRow == null
+		|| BaseObject.CurrentRow.Row == null
+		|| BaseObject.CurrentRow.Row.IsNull("InitialCostId")	
+			)
+		return null;
+		
+		init_ = BaseObject.CurrentRow.Row["InitialCostId"].ToString();
+		  
+	    		sb = new StringBuilder();
+	    		sb.Clear();
+	    		sb.AppendLine("select isnull(GivenPriceForexRate,0) [forex_rate],isnull(GivenPrice,0) [given_price] ,isnull(GivenPriceForexId,0) [forex_id] from MA_InitialCost IC with (nolock)");
+	    		sb.AppendLine("where IC.RecId=\'"+init_.ToString()+"\'");
+	    	    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",sb.ToString());
+				
+				if(dt==null || dt.Rows.Count&lt;=0)
+						return null;
+					//	MessageBox.Show(sb.ToString());
+			    given_price_ = Convert.ToDecimal(dt.Rows[0]["given_price"]);
+			    forex_id_ = Convert.ToInt32(dt.Rows[0]["forex_id"]);
+			    forex_rate_ = Convert.ToInt32(dt.Rows[0]["forex_rate"]);
+				
+				if(forex_id_ == 0)
+				{
+					BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UnitPrice",Convert.ToDecimal(given_price_));
+					
+						OnAfterSuccessPost(0,given_price_,0,BaseObject.CurrentRow.Row["RecId"]);
+				}
+				else
+				{
+					BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("ForexId",Convert.ToInt32(forex_id_));
+					BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("ForexUnitPrice",Convert.ToDecimal(forex_rate_) * Convert.ToDecimal(given_price_));
+					BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UnitPrice",Convert.ToDecimal(given_price_));
+					OnAfterSuccessPost(forex_id_,(forex_rate_*given_price_),given_price_,BaseObject.CurrentRow.Row["RecId"]);
+				}
+
+}
+function OnAfterSuccessPost(f_id,unit_p,f_unit_p,rec)
+{
+	if(f_id ==0)
+	{
+		update_query = "update MA_WorkOrderItem set ForexUnitPrice=null,ForexId=null,UnitPrice=\'"+unit_p.ToString().Replace(",",".")+"\' where WorkOrderId=\'"+rec.ToString()+"\'";
+				
+	}
+	else
+	{
+		update_query = "update MA_WorkOrderItem set UnitPrice=\'"+unit_p.ToString().Replace(",",".")+"\',ForexId=\'"+f_id.ToString()+"\',ForexUnitPrice=\'"+f_unit_p.ToString().Replace(",",".")+"\' where WorkOrderId=\'"+rec.ToString()+"\'";
+	}
+
+		 dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",update_query.ToString());
+	
+//	MessageBox.Show(update_query.ToString());
+}</ScriptText>
+</ScriptDefinition>

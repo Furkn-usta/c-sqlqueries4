@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderRenkMüşteriKontrol" Enabled="true" Priority="0" ScriptName="OrderRenkMüşteriKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 25.10.2023 10:57:07 
+function OnBeforePost(sender,ev)
+{
+	if(BaseObject == null
+	||BaseObject.CurrentRow == null
+	||BaseObject.CurrentRow.Row == null
+	||BaseObject.CurrentRow.Row.IsNull("CurrentAccountId")
+		)
+		return null;
+		
+		caid_ = BaseObject.CurrentRow.Row["CurrentAccountCode"].ToString();
+		MessageBox.Show(caid_);
+		foreach(woi in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=2 and ParentItemId is null and  RecId is not null") )
+		     {
+		     	query ="select isnull((select isnull(UD_Musteri,\'\') from IM_ItemVariant IV with (nolock)";
+		     	query +=" left join IM_VariantItem VI with (nolock) on VI.RecId=IV.Variant1Id";
+		     	query += " where VI.ItemCode=isnull(WOI.OperationCode,\'\') or VI.ItemName=isnull(WOI.OperationCode,\'\') group by UD_Musteri),\'\')";
+		     	query += " [op] from MA_WorkOrder WO with (nolock)";
+		     	query += " left join MA_WorkOrderItem WOI with (nolock) on WOI.WorkOrderId=WO.RecId";
+		     	query += " where WOI.WorkOrderSubType=2 and WOI.ParentItemId is null and WOI.RecId=\'"+woi["RecId"].ToString()+"\'";
+		    //	 MessageBox.Show(query);
+		     	 dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction,"dt",query); 
+                 if(dt == null || dt.Rows.Count &lt;=0)
+                        return null;
+                      
+                  op_caid = dt.Rows[0]["op"].ToString();   
+                  
+                   if(op_caid.ToString() != caid_.ToString())
+                   {
+                   	sender.ShowMessage("Renk içerisindeki müşteri ile order başlık müşterinin aynı olması gerekmektedir.");
+                   	ev.Cancel = true;
+                   	return null;
+                   }
+		     }
+}</ScriptText>
+</ScriptDefinition>

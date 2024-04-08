@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Pastal Hesapları" Enabled="true" Priority="0" ScriptName="Pastal Hesapları">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderCuttingProductionEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderCuttingProductionEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 24.04.2019 10:26:03
+function OnBeforePost(sender,eventArg)
+{
+    if(BaseObject!=null &amp;&amp; BaseObject.CurrentRow!=null &amp;&amp; BaseObject.CurrentRow.Row!=null)
+    {
+        dtRecipe = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dtRecipe","select isnull(Quantity,0) Quantity,isnull(Wastage,0) Wastage from MA_RecipeItem with (nolock) where OwnerInventoryId = (select InventoryId from MA_WorkOrder where RecId in (select WorkOrderId from MA_WorkOrderItem where RecId = " +Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderItemId"])+ ")) and InventoryId = " +Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryId"]));
+        if(dtRecipe != null &amp;&amp; dtRecipe.Rows.Count &gt; 0)
+        {
+           oncekiMetraj = Convert.ToDecimal(dtRecipe.Rows[0]["Quantity"]) * (1 + Convert.ToDecimal(dtRecipe.Rows[0]["Wastage"])/100);
+           BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_OncekiMetraj",oncekiMetraj);
+        }
+        
+        rows=BaseObject.Data.Tables["MA_WorkOrderProductionDetail"].Select("isnull(MarkerCount,0) &lt;&gt; 0 and isnull(MarkerLength,0) &lt;&gt; 0");
+   	    if(rows != null &amp;&amp; rows.Length &gt; 0)
+        {  
+           MLength = Convert.ToDecimal(rows[0]["MarkerLength"])/100;
+		   MCount = Convert.ToDecimal(rows[0]["MarkerCount"]);
+	       MTotalMeter = MLength * MCount;
+		   BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_Pastal",MTotalMeter);
+		   
+     	}
+		
+		rows2=BaseObject.Data.Tables["MA_WorkOrderProductionDetail"].Select("isnull(ProductCount,0) &lt;&gt; 0 and isnull(MarkerLength,0) &lt;&gt; 0");
+   	    if(rows2 != null &amp;&amp; rows2.Length &gt; 0 &amp;&amp; !BaseObject.CurrentRow.Row.IsNull("UD_Pastal") &amp;&amp; Convert.ToDecimal(BaseObject.CurrentRow.Row["UD_Pastal"]) != 0)
+        {
+           PCount = Convert.ToDecimal(rows2[0]["ProductCount"]);
+           Qty = Convert.ToDecimal(BaseObject.CurrentRow.Row["Quantity"]);
+           MLength2 = Convert.ToDecimal(rows[0]["MarkerLength"])/100;
+		   MPastal = Convert.ToDecimal(BaseObject.CurrentRow.Row["UD_Pastal"]);
+		   GercekBirimMetraj = MLength2 / Qty;
+		   BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_GercekBirimMetraj",GercekBirimMetraj);
+		
+		   if(!BaseObject.CurrentRow.Row.IsNull("UD_Verimlilik") &amp;&amp; Convert.ToDecimal(BaseObject.CurrentRow.Row["UD_Verimlilik"]) != 0)
+		      Verimlilik = Convert.ToDecimal(BaseObject.CurrentRow.Row["UD_Verimlilik"]);
+		 
+		    AgirlikliVerimlilik = PCount * Verimlilik;
+		    BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_AgirlikliVerimlilik",AgirlikliVerimlilik);
+		}
+    }   
+        
+}</ScriptText>
+</ScriptDefinition>

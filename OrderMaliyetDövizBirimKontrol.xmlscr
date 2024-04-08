@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderMaliyetDövizBirimKontrol" Enabled="true" Priority="0" ScriptName="OrderMaliyetDövizBirimKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 18.03.2024 09:24:53 OrderMaliyetDövizBirimKontrol
+
+function OnBeforePost(sender, ev)
+{
+    if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("InitialCostId")
+	
+	)
+    	return null;
+    init_id = BaseObject.CurrentRow.Row["InitialCostId"].ToString();
+
+	sb = new StringBuilder();
+	
+	foreach(woi in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType = 1")) 
+		{
+			sb.Clear();
+			sb.AppendLine("select isnull(IC.GivenPriceForexId,0) [given_forex_id],ISNULL(IC.GivenPriceForexRate,0)[given_forex_rate] ");
+			sb.AppendLine("from MA_InitialCost IC with (nolock) where IC.RecId=\'"+init_id.ToString()+"\'");
+			//MessageBox.Show(sb.ToString());
+			dt_sb = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb",sb.ToString());
+			if(dt_sb != null &amp;&amp; dt_sb.Rows.Count &gt; 0)
+				{
+					if(woi.IsNull("ForexUnitPrice"))
+						order_price = 0m;
+					else
+						order_price = Convert.ToDecimal(woi["ForexUnitPrice"]);
+
+					if(woi.IsNull("ForexId"))
+						order_forex_id = 0;
+					else
+						order_forex_id = Convert.ToInt32(woi["ForexId"]);		
+				//	MessageBox.Show(order_forex_id.ToString());
+				//	MessageBox.Show(order_price.ToString());
+					if(order_price != Convert.ToDecimal(dt_sb.Rows[0]["given_forex_rate"]))
+					{
+						sender.ShowMessage("Order Fiyatı ve Ön Maliyet Fiyatı Birbirinden Farklı");
+					}
+					if(order_forex_id != Convert.ToInt32(dt_sb.Rows[0]["given_forex_id"]))
+					{
+						sender.ShowMessage("Order Döviz Birimi ve Ön Maliyet Döviz Birimi Birbirinden Farklı");
+					}
+				}	
+		}	
+}</ScriptText>
+</ScriptDefinition>

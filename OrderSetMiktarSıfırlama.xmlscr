@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderSetMiktarSıfırlama" Enabled="true" Priority="0" ScriptName="OrderSetMiktarSıfırlama">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 22.06.2023 17:13:20
+/*
+Setli girilen orderlarda SubNosu 1 ve 1001 olmayanların miktarlarının sıfırlanmasını sağlıyor.
+*/
+function OnBeforePost(sender,ev)
+{
+    if(BaseObject == null
+    || BaseObject.CurrentRow == null
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.ActiveSession.User.RecId != 1)
+        return null;
+
+        foreach(woiv in BaseObject.Data.Tables["MA_WorkOrderItemVariant"].Select("RecId is not null and SubNo not in  (1,1001) "))
+                { 
+                  woiv.SetField&lt;|int|&gt;("Quantity",0);         
+                }
+}</ScriptText>
+</ScriptDefinition>

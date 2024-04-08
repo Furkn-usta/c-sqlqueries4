@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderMiktaraGöreKesimFazlası" Enabled="true" Priority="0" ScriptName="OrderMiktaraGöreKesimFazlası">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories>
+    <History EditedBy="Furkan Usta" EntryDate="2023-08-17T00:00:00">
+      <Change>Order miktarı eğer 500 ve üzeri ise kesim fazlasını 7, 500 den az ise kesim fazlası oranını 5 olarak sabitleyecektir. 
+</Change>
+    </History>
+  </Histories>
+  <ScriptText>//Generated on 17.08.2023 08:45:29 OrderMiktaraGöreKesimFazlası 
+
+/*
+Order miktarı eğer 500 ve üzeri ise kesim fazlasını 7, 500 den az ise kesim fazlası oranını 5 olarak sabitleyecektir. 
+*/
+
+function OnBeforePost(sender,ev)
+{
+    if(BaseObject == null 	
+	|| BaseObject.CurrentRow == null 	
+	|| BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("WorkOrderType")
+    || Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderType"]) != 15)
+        return null;
+
+    	foreach(woi in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType = 1") )
+		{
+              qua_ =   Convert.ToInt32(woi["Quantity"]);
+              const_ = 0;
+                if(qua_ &gt;= 500)
+                {
+                    const_ = 7;
+                    BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("Capacity",Convert.ToInt32(const_));
+                }
+                if(qua_ &lt; 500)
+                {
+                    const_ = 5;
+                    BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("Capacity",Convert.ToInt32(const_));
+                }
+                //MessageBox.Show(const_.ToString());
+        }
+}</ScriptText>
+</ScriptDefinition>

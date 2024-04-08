@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderMaliyetOnayKontrol" Enabled="true" Priority="0" ScriptName="OrderMaliyetOnayKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="PackagingListEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="PackagingListEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 15.06.2023 16:10:30
+function OnBeforePost(sender, ev)
+{
+
+    if( BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("WorkOrderId"))
+    return null;
+            query_SQL_ = "select isnull(MIC.IsApproved,0) [m_onay] from MA_InitialCost MIC with (nolock) ";
+            query_SQL_ += "  where MIC.RecId =(select isnull(InitialCostId,0) from MA_WorkOrder WO with (nolock) where WO.RecId=\'"+Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderId"])+"\')";
+            dt_query_SQL_ = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_query_SQL_",query_SQL_);
+            if(dt_query_SQL_==null || dt_query_SQL_.Rows.Count&lt;=0)
+                return null;
+             m_onay_ =  Convert.ToInt32(dt_query_SQL_.Rows[0]["m_onay"]);
+
+             if(m_onay_==0)
+             {
+               sender.ShowMessage("Ordera Bağlı Olan Ön Maliyet Onaysız Olduğu İçin Çeki Oluşturulamaz. {scr:OrderMaliyetOnayKontrol} ");
+                ev.Cancel = true;
+                return null; 
+             }
+
+}
+
+</ScriptText>
+</ScriptDefinition>

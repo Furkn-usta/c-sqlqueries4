@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneKodUretim" Enabled="true" Priority="1" ScriptName="NumuneKodUretim">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 20.10.2023 10:28:55 NumuneKodUretim 
+function OnBeforePost(sender,ev)
+{
+	if(BaseObject == null 
+	    || BaseObject.CurrentRow == null
+	    || BaseObject.CurrentRow.Row == null
+		|| BaseObject.CurrentRow.Row.IsNull("InventoryType")
+		|| BaseObject.CurrentRow.Row.IsNull("IsSample")
+		|| BaseObject.CurrentRow.Row.IsNull("GroupId")
+		|| BaseObject.CurrentRow.Row.IsNull("CategoryId")
+		|| BaseObject.CurrentRow.Row.IsNull("UD_Counter")
+		|| BaseObject.CurrentRow.Row.IsNull("UD_KumasCode")
+		|| BaseObject.CurrentRow.Row.IsNull("CurrentAccountId")
+		|| Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) != 1	 
+		|| Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) != 100)
+			return null;
+		/*	*/
+			if(Convert.ToInt32(BaseObject.CurrentRow.Row["CurrentAccountId"]) != 6) // çalışacak recimüşteri recid
+				return null;
+			
+			
+		category_name = BaseObject.CurrentRow.Row["CategoryName"].ToString();
+		group_code = BaseObject.CurrentRow.Row["GroupCode"].ToString();
+		counter = BaseObject.CurrentRow.Row["UD_Counter"].ToString();
+		kumas_code = BaseObject.CurrentRow.Row["UD_KumasCode"].ToString();
+		g_code = Convert.ToInt32(group_code) + Convert.ToInt32(counter);
+		inventory_code = category_name.ToString()+"-"+g_code.ToString()+"-"+kumas_code.ToString();
+		BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("InventoryCode",inventory_code.ToString());
+	 
+}
+</ScriptText>
+</ScriptDefinition>

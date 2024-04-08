@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ÖdemeVadesiBosOlamaz" Enabled="true" Priority="0" ScriptName="ÖdemeVadesiBosOlamaz">
+  <Events>
+    <Event Enabled="true" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" ObjectName="CurrentAccountEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost2" ObjectName="CurrentAccountEN" />
+  </Events>
+  <Histories />
+  <ScriptText>function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+		return null;
+
+	
+if(string.IsNullOrWhiteSpace(BaseObject.CurrentRow.Row["UD_YakaAciklama"].ToString()))
+	{
+		BaseObject.ShowMessage("Ödeme Vadesi alanı boş olamaz! {scr:VadeTarihiBosOlamaz}");
+		ev.Cancel = true;
+		return null;
+	}
+}
+
+
+
+function OnBeforePost2(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+		return null;
+
+	if(BaseObject.CurrentRow.Row.IsNull("TermDay"))
+	{
+		BaseObject.ShowMessage("Vade Günü alanı boş olamaz! {scr:VadeTarihiBosOlamaz}");
+		ev.Cancel = true;
+		return null;
+	}
+}
+</ScriptText>
+</ScriptDefinition>

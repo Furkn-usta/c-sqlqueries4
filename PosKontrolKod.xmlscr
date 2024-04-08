@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PosKontrolKod" Enabled="true" Priority="0" ScriptName="PosKontrolKod">
+  <Events>
+    <Event Enabled="true" ObjectName="PosEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="PosEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 8.06.2023 11:51:24
+function OnAfterSucceededPost(sender,ev)
+{
+if(BaseObject==null
+||BaseObject.CurrentRow==null
+||BaseObject.CurrentRow.Row==null)   
+ return null;
+
+query ="update SM_Pos  set ControlCode =1 where (select DATEDIFF(DAY,ReceiptDate,GETDATE()))&gt;0";
+ UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection, null, query);
+}</ScriptText>
+</ScriptDefinition>

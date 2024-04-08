@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ProductionAtama" Enabled="true" Priority="0" ScriptName="ProductionAtama">
+  <Events>
+    <Event Enabled="true" ObjectName="UserCardVM" />
+    <Event Enabled="true" EventName="ViewLoaded" FunctionName="OnViewLoaded" ObjectName="UserCardVM" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 7.12.2022 14:00:02
+function OnViewLoaded (sender , eventArg){
+    if(BaseObject.ActiveEntity!=null 
+       &amp;&amp; BaseObject.ActiveEntity.CurrentRow!=null 
+       &amp;&amp; BaseObject.ActiveEntity.CurrentRow.Row!=null)
+    {
+	   btn=BaseObject.FindControl("splitValues");
+	   btn.Click+=btnClick;
+    }
+}
+function btnClick (sender , eventArg)
+{
+     l_service = BaseObject.ActiveSession.Container.Resolve&lt;|ISystemService|&gt;("ChangeProductionValuesService");
+      if(l_service != null)
+      {
+         l_service.CreateProduction();
+      }    
+}</ScriptText>
+</ScriptDefinition>

@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderMiktarÇekiMiktarKontrol" Enabled="true" Priority="0" ScriptName="OrderMiktarÇekiMiktarKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="PackagingListEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="PackagingListEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 19.01.2023 09:20:51 OrderMiktarÇekiMiktarKontrol
+
+function OnAfterSucceededPost(sender, ev)
+{
+    if (BaseObject == null 
+    || BaseObject.CurrentRow == null
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("WorkOrderId"))
+        return null;
+        
+        sb = new StringBuilder();
+        sb.Clear();
+        sb.AppendLine(" select isnull(sum(isnull(PLI.PQuantity,0)),0)[ceki_total] ,isnull(WO.Quantity,0) [order_mikt] from IM_PackagingList PL with (nolock) ");
+        sb.AppendLine(" left join IM_PackagingListItem PLI with (nolock) on PLI.PackagingListId=PL.RecId ");
+        sb.AppendLine(" left join MA_WorkOrder WO with (nolock) on PL.WorkOrderId=WO.RecId ");
+        sb.AppendLine(" where PL.WorkOrderId=\'"+Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderId"])+"\' and PL.PackagingType=1 and WO.CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\'");
+        sb.AppendLine(" group by WO.Quantity");
+               
+        dt_sb = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb",sb.ToString());
+                        
+        if(dt_sb == null || dt_sb.Rows.Count &lt;= 0)
+             return null;
+                            
+         ceki_total_ = Convert.ToDecimal(dt_sb.Rows[0]["ceki_total"]);
+         order_mikt_ = Convert.ToDecimal(dt_sb.Rows[0]["order_mikt"]);
+        if(Convert.ToDecimal(ceki_total_) &gt;= Convert.ToDecimal(order_mikt_))  
+            {
+                update_query = 	"update MA_WorkOrder set IsClosed = 1 where RecId =\'"+BaseObject.CurrentRow.Row["WorkOrderId"].ToString()+"\'";
+	            UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,update_query.ToString());
+	        
+            }
+        else
+            return null;
+}</ScriptText>
+</ScriptDefinition>

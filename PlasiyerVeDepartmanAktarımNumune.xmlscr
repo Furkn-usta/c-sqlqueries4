@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PlasiyerVeDepartmanAktarımNumune" Enabled="true" Priority="0" ScriptName="PlasiyerVeDepartmanAktarımNumune">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 8.01.2024 11:11:41 PlasiyerVeDepartmanAktarımNumune
+/*
+Kullanıcı kartı içerisinde bulunan Personel / Plasiyer Kodu bilgisini numunedeki Sorumlu kısmına, Departman Kodu bilgisi ise numune içerisindeki Departman kodu ile eşleşirse  Departman kısmına veriyi eklemektedir. 
+*/
+function OnBeforePost(sender,ev)
+{
+	if (BaseObject == null 
+	|| BaseObject.CurrentRow == null
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("InventoryType")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) != 100	
+	|| BaseObject.CurrentRow.Row.IsNull("IsSample")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) != 1)
+		return null;
+	if(BaseObject.ActiveSession.User.EmployeeId != null &amp;&amp; BaseObject.ActiveSession.User.EmployeeId.ToString().Trim() != "")
+	{
+		plasiyer_id   = BaseObject.ActiveSession.User.EmployeeId.ToString();	
+		BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("RepresentativeId",Convert.ToInt32(plasiyer_id));
+	}
+	
+	if(BaseObject.ActiveSession.User.DepartmentId != null &amp;&amp; BaseObject.ActiveSession.User.DepartmentId.ToString().Trim() != "")
+	{
+		department_id = BaseObject.ActiveSession.User.DepartmentId.ToString();
+		query = "select top 1 isnull(ID.RecId,\'\') [id_rec] from IM_ItemDepartment ID with (nolock) where isnull(ID.DepartmentCode,\'\') =(select isnull(DepartmentCode,\'\') [dc] from MD_Department D with (nolock) where D.RecId=\'"+department_id.ToString()+"\')";
+		dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query);
+		 if(dt!=null &amp;&amp; dt.Rows.Count&gt;0)
+			{
+				BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("ItemDepartmentId",Convert.ToInt32(dt.Rows[0]["id_rec"]));		
+			}
+	}
+
+	
+}</ScriptText>
+</ScriptDefinition>

@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderBiyeHesaplama" Enabled="true" Priority="0" ScriptName="OrderBiyeHesaplama">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderVM" />
+    <Event Enabled="true" EventName="ViewLoaded" FunctionName="OnViewLoaded" ObjectName="TWorkOrderVM" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 07.08.2023 13:30:03		
+
+function OnViewLoaded(sender, ev)
+{
+   
+	if(BaseObject == null) 
+        return null;
+    
+	AddOnClickCb("btnCalculated",OnbtnCalculatedButtonsClick);
+
+}
+
+function AddOnClickCb(ctrl, cb)
+{
+	btnSender = BaseObject.FindControl(ctrl);
+		if(btnSender != null)
+			btnSender.Click += cb;
+}
+
+fabric_width=1.50;
+verev_rate=90;
+function OnbtnCalculatedButtonsClick()
+{
+
+	calc_verev = 0m;
+	if(!BaseObject.ActiveEntity.CurrentRow.Row.IsNull("UD_CalculatedVerev") &amp;&amp; Convert.ToDecimal(BaseObject.ActiveEntity.CurrentRow.Row["UD_CalculatedVerev"]) &gt; 0m)
+			calc_verev = Convert.ToDecimal(BaseObject.ActiveEntity.CurrentRow.Row["UD_CalculatedVerev"]);
+
+	order_quant = 0m;
+	if(!BaseObject.ActiveEntity.CurrentRow.Row.IsNull("UD_OrderQuantity") &amp;&amp; Convert.ToDecimal(BaseObject.ActiveEntity.CurrentRow.Row["UD_OrderQuantity"]) &gt; 0m)
+			order_quant = Convert.ToDecimal(BaseObject.ActiveEntity.CurrentRow.Row["UD_OrderQuantity"]);
+		
+	req_quant = 0m;
+	if(!BaseObject.ActiveEntity.CurrentRow.Row.IsNull("UD_RequiredQuantity") &amp;&amp; Convert.ToDecimal(BaseObject.ActiveEntity.CurrentRow.Row["UD_RequiredQuantity"]) &gt; 0m)
+			req_quant = Convert.ToDecimal(BaseObject.ActiveEntity.CurrentRow.Row["UD_RequiredQuantity"]);
+	
+	BaseObject.ActiveEntity.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_FabricWidth",Convert.ToDecimal(fabric_width));
+	
+	BaseObject.ActiveEntity.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_VerevRate",Convert.ToDecimal(verev_rate));
+			
+	req_order_quant_ = order_quant*req_quant;	
+	if(calc_verev == 0)
+	{
+BaseObject.ActiveEntity.ShowMessage("Hesaplanan Verev Alanı Boş Bırakılamaz.. scr{OrderBiyeHesaplama}", ConstantStr.Warning, Zeta.Common.InformationMessages.MessageBoxButton.OK, Zeta.Common.InformationMessages.MessageBoxImage.Exclamation);
+	BaseObject.ActiveEntity.CurrentRow.Row.SetField&lt;|string|&gt;("Explanation","0");
+	BaseObject.ActiveEntity.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Calculated",0);
+
+	return null;
+		
+	}
+	verev_rate_calc = global:verev_rate / calc_verev;
+	
+	if(verev_rate_calc == 0)
+	{
+	MessageBox.Show("0 İle Bölme İşlemi Yapılamaz.. scr{OrderBiyeHesaplama}");
+	BaseObject.ActiveEntity.CurrentRow.Row.SetField&lt;|string|&gt;("Explanation","0");
+	return null;
+	}
+	total_calc = (req_order_quant_ / verev_rate_calc) / global:fabric_width;
+
+	query_ceiling =  "SELECT CEILING("+Convert.ToInt32(total_calc)+" / 10.0) * 10 AS [ySayi]";
+	ceiling_dt = UtilityFunctions.GetDataTableList(BaseObject.ActiveEntity.Provider, BaseObject.ActiveEntity.Connection, BaseObject.ActiveEntity.Transaction, "ceiling_dt",query_ceiling.ToString());
+   if(ceiling_dt == null &amp;&amp; ceiling_dt.Rows.Count &lt;= 0)
+		return null;
+    
+   	BaseObject.ActiveEntity.CurrentRow.Row.SetField&lt;|string|&gt;("Explanation",Convert.ToString(ceiling_dt.Rows[0]["ySayi"]));
+	BaseObject.ActiveEntity.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Calculated",Convert.ToInt32(ceiling_dt.Rows[0]["ySayi"]));
+
+     
+}
+</ScriptText>
+</ScriptDefinition>

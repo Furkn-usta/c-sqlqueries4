@@ -1,0 +1,459 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ÖnMaliyetMail" Enabled="false" Priority="0" ScriptName="ÖnMaliyetMail">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>function OnAfterSucceededPost(sender,eventArg)
+{
+    if(BaseObject != null 
+    &amp;&amp; BaseObject.CurrentRow != null 
+    &amp;&amp; BaseObject.CurrentRow.Row != null 
+    &amp;&amp; BaseObject.CurrentRow.Row.RowState!=DataRowState.Deleted 
+    &amp;&amp; BaseObject.CurrentRow.Row.RowState!=DataRowState.Detached 
+    &amp;&amp; !BaseObject.CurrentRow.Row.IsNull("UD_SendMail") 
+    &amp;&amp; Convert.ToInt16(BaseObject.CurrentRow.Row["UD_SendMail"])==1 ){
+	    sb=new StringBuilder();
+	    costItem=new StringBuilder();    
+	    profitCost=new StringBuilder();              
+		sb.AppendLine("&lt;!DOCTYPE html&gt;");
+		sb.AppendLine("&lt;html&gt;");
+		sb.AppendLine("&lt;head&gt;");
+		sb.AppendLine("&lt;meta charset= \"utf-8\"&gt;");
+		sb.AppendLine("&lt;style&gt;");
+		sb.AppendLine("body {background-color: #FFFFFF;font-family:\"Courier New\", Courier, monospace;font-size: 11px;color: #666666;}");
+		sb.AppendLine("hr {height: 1px;color: #666666;background-color: #FFFFFF;border-bottom: 1px solid #666666;}");
+		sb.AppendLine("#costBox{width: 500px;float: left;} ");
+		sb.AppendLine("#lineTable{border-width: 1px;border-style: inset;border-color: #666666;border-collapse: collapse;} ");
+		sb.AppendLine("#lineTableTr{border-width: 1px;border-style: inset;border-color: #666666;background-color: #FFFFFF;} ");
+		sb.AppendLine("#lineTableTdHeader{border-width: 1px;padding: 1px; border-style: inset; border-color: #666666; background-color: #dcdcdc; font-size: 11px;font-weight: bold; } ");
+		sb.AppendLine("#lineTableTd{border-width: 1px;padding: 3px; border-style: inset; border-color: #666666; background-color: #FFFFFF; font-size: 10px; } ");
+		sb.AppendLine("#costLineTable{border-width: 1px;border-style: inset;border-color: #666666; width:700px;border-collapse: collapse; } ");
+		sb.AppendLine("#costLineTableTr{border-width: 1px;border-style: inset;border-color: #666666;background-color: #FFFFFF;} ");
+		sb.AppendLine("#costLineTableTd{border-width: 1px;border-style: inset;border-color: #666666;background-color: #FFFFFF; font-size: 9px;padding:3px;} ");
+		sb.AppendLine("#costHeader{float: left; width:800px; } ");
+		sb.AppendLine("#costTotalTable{border-collapse: collapse;width:700px;} ");
+		sb.AppendLine("#costTotalTableTr{border-collapse: collapse;} ");
+		sb.AppendLine("#costTotalTableTd{border-collapse: collapse;background-color: #FFFFFF; font-size: 9px; } ");
+		sb.AppendLine("#orderBox{float: left;} ");
+		sb.AppendLine("&lt;/style&gt; ");
+		sb.AppendLine("&lt;/head&gt; ");
+		sb.AppendLine("&lt;body&gt; ");
+		sb.AppendLine("&lt;h3 align=\"center\"&gt; ORDER ÖZET &lt;h3&gt; ");
+		sb.AppendLine("&lt;hr /&gt; ");
+		/*
+		sb.AppendLine("&lt;div id=\"costHeader\"&gt; ");
+		sb.AppendLine("&lt;table border=\"0\" id=\"costBox\"  align=\"left\"  &gt; ");
+		sb.AppendLine("&lt;tbody&gt; ");
+	 	sb.AppendLine("&lt;tr&gt;&lt;td style=\"text-align: left;\"&gt;ORDER LİSTESİ&lt;/td&gt;&lt;/tr&gt;");
+		sb.AppendLine("&lt;/tbody&gt; ");
+		sb.AppendLine("&lt;/table&gt; ");			
+		sb.AppendLine("&lt;/div&gt;");
+		*/
+		sb.AppendLine("&lt;div  style=\"float: left;\"&gt; ");	
+		sb.AppendLine("&lt;table border=\"0\" valign=\"left\" align=\"left\" &gt; ");
+		sb.AppendLine("&lt;tbody&gt; ");
+		sb.AppendLine("&lt;tr&gt;");
+		sb.AppendLine("&lt;td&gt;");
+		sb.AppendLine("&lt;table id=\"lineTable\" &gt; ");
+		sb.AppendLine("&lt;tbody&gt; ");
+		sb.AppendLine("&lt;tr id=\"lineTableTr\"&gt; ");
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Müşteri Adi&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Order No&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Model Kodu&lt;/span&gt;&lt;/td&gt; ");	
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\" width=\"10%\"&gt;&lt;span&gt;Model Adi&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Yükleme Ad.&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"  width=\"5%\" align=\"center\" &gt;&lt;span&gt;Üretim Süresi(DK)&lt;/span&gt;&lt;/td&gt; ");
+				
+	    sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;İsteme Tarihi&lt;/span&gt;&lt;/td&gt; ");
+				
+	    sb.AppendLine("&lt;td id=\"lineTableTdHeader\"  width=\"15%\"&gt;&lt;span&gt;Kumaş Açiklama&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Kumaş Renkleri&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Kumaş Kodu&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Birim İht.&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Plan İht.&lt;/span&gt;&lt;/td&gt; ");
+						
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Teslim Şekli&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Üretim Yeri&lt;/span&gt;&lt;/td&gt; ");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;PO Tarihi&lt;/span&gt;&lt;/td&gt;");
+		
+		sb.AppendLine("&lt;td id=\"lineTableTdHeader\"&gt;&lt;span&gt;Müşteri Renk Kodlari&lt;/span&gt;&lt;/td&gt;");
+		
+		sb.AppendLine("&lt;/tr&gt; ");
+		
+        tWorkOrder =new StringBuilder();
+		tWorkOrder.AppendLine("select isnull(A.CurrentAccountName,\'\') Customer "); //Müşteri Adi
+		
+		tWorkOrder.AppendLine(",isnull(W.WorkOrderNo,\'\') OrderNo "); //Order No
+		
+		tWorkOrder.AppendLine(",isnull(I.InventoryCode,\'\') StyleNo "); //Model Kodu
+		
+		tWorkOrder.AppendLine(",isnull(I.InventoryName,\'\') StyleName "); //Model Adi
+		
+		tWorkOrder.AppendLine(",isnull(W.Quantity,0) OrderQty "); //Yükleme Ad.
+		
+		tWorkOrder.AppendLine(",isnull(W.UD_UretimSuresi,\'\') ProductTime");  //Üretim Süresi(DK)
+		
+		tWorkOrder.AppendLine(",isnull(convert(nvarchar,isnull(W.DeliveryDate,\'\'),104),\'\') DeliveryDate"); //İsteme Tairihi
+		
+		tWorkOrder.AppendLine(",isnull(II.InventoryName,\'\') FabricExplanation "); //Kumaş Açiklama
+		
+		tWorkOrder.AppendLine(" ,isnull(case when (select COUNT(WI2.OperationCode) FROM MA_WorkOrderItem WI2 with(nolock) where WI2.WorkOrderId = W.RecId and WI2.WorkOrderSubType=2  ");//5.05.22  // Kumaş Renkleri
+		tWorkOrder.AppendLine(" and WI2.ParentItemId is null) = 0 then \'\' else  STUFF((SELECT \'/\' + isnull(WI2.OperationCode,\'\') FROM MA_WorkOrderItem WI2 with(nolock) where WI2.WorkOrderId = W.RecId ");//5.05.22  // Kumaş Renkleri
+		tWorkOrder.AppendLine(" and WI2.WorkOrderSubType=2 and WI2.ParentItemId is null FOR XML PATH (\'\')), 1, 1, \'\')end ,\'\')KumasRenk");//5.05.22  // Kumaş Renkleri
+		
+		tWorkOrder.AppendLine(",isnull(II.InventoryCode,\'\') FabricCode "); //Kumaş Kodu
+		
+		tWorkOrder.AppendLine(",isnull((isnull(RI.Quantity,0)+isnull(RI.Quantity,0)*isnull(RI.Wastage,0)/100),0) FabricUnitQty "); //Birim İht.
+		
+		tWorkOrder.AppendLine(",isnull(((isnull(RI.Quantity,0)+isnull(RI.Quantity,0)*isnull(RI.Wastage,0)/100) * isnull(W.Quantity,0)),0) PlannedQty  "); //Plan İht.
+						
+		tWorkOrder.AppendLine(",isnull((case isnull(W.TypeOfShipment,0) when 1 then \'By Road\' when 2 then \'By Road\' when 3 then \'By Air\' ");//Teslim Şekli
+		tWorkOrder.AppendLine(" when 11 then \'FOB\' when 12 then \'CIF\' when 13 then \'FCA\' when 99 then \'Other\' else \'\' end),\'\') TeslimŞekli  "); //Teslim Şekli
+		
+		tWorkOrder.AppendLine(",isnull(C.CurrentAccountName,\'\') UretimYeri"); //Üretim Yeri
+		
+		tWorkOrder.AppendLine(",isnull((case when convert(nvarchar,isnull(W.UD_POT,\'\'),104)=\'01.01.1900\' then \'\' else  convert(nvarchar,isnull(W.UD_POT,\'\'),104) end),\'\') PODate "); //PO Tarihi
+						
+		tWorkOrder.AppendLine(",isnull(case when (select COUNT(WI2.UD_MusteriRenkKodu) FROM MA_WorkOrderItem WI2 with(nolock) where WI2.WorkOrderId = W.RecId and WI2.WorkOrderSubType=2 and ");//5.05.22 //Müşteri Renk Kodlari
+		tWorkOrder.AppendLine(" WI2.ParentItemId is null) = 0 then \'\' else  STUFF((SELECT \'/\' + isnull(WI2.UD_MusteriRenkKodu,\'\') FROM MA_WorkOrderItem WI2 with(nolock) ");//5.05.22 //Müşteri Renk Kodlari
+		tWorkOrder.AppendLine(" where WI2.WorkOrderId = W.RecId and WI2.WorkOrderSubType=2 and WI2.ParentItemId is null FOR XML PATH (\'\')), 1, 1, \'\')end ,\'\')MusteriRenkKodu");//5.05.22 //Müşteri Renk Kodlari
+				
+		tWorkOrder.AppendLine("from MA_WorkOrder W with (nolock)");
+		tWorkOrder.AppendLine("left join MA_WorkOrderItem WI with (nolock) on W.RecId=WI.WorkOrderId  and WI.WorkOrderSubType=1");
+		tWorkOrder.AppendLine("left join FI_Account A with (nolock) on A.RecId=W.CurrentAccountId");
+		tWorkOrder.AppendLine("left join IM_Item I with (nolock) on I.RecId=WI.InventoryId");
+		tWorkOrder.AppendLine("left join MA_RecipeItem RI with (nolock) on RI.OwnerInventoryId=I.RecId and RI.ItemType=1 /* and isnull(RI.IsMaster,0)=1 and isnull(RI.IsCutting,0)=1*/");
+		tWorkOrder.AppendLine("left join IM_Item II with (nolock) on II.RecId=RI.InventoryId");
+		tWorkOrder.AppendLine("left join FI_Account C with (nolock) on C.RecId=W.FactoryId");
+		tWorkOrder.AppendLine("where W.WorkOrderType=15 and W.RecId="+BaseObject.CurrentRow.Row["RecId"]+"");
+		
+	    dtOrder = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "TWO",tWorkOrder.ToString());	
+		if(dtOrder!=null &amp;&amp; dtOrder.Rows.Count&gt;0){
+		    foreach(drOrder in dtOrder.Rows){
+		    
+		        sb.AppendLine("&lt;tr id=\"lineTableTr\"&gt; ");
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: left;\"&gt;" +drOrder["Customer"]+"&lt;/td&gt;"); 
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["OrderNo"]+"&lt;/td&gt;"); 
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["StyleNo"]+"&lt;/td&gt;"); 
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["StyleName"]+"&lt;/td&gt;");  
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+Convert.ToInt32(drOrder["OrderQty"])+"&lt;/td&gt;"); 
+				
+				sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;"+drOrder["ProductTime"]+"&lt;/td&gt;");
+				
+				sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["DeliveryDate"]+"&lt;/td&gt;"); 
+								
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["FabricExplanation"]+"&lt;/td&gt;");
+				
+				 sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["KumasRenk"]+"&lt;/td&gt;"); //5.05.22
+				 
+				 sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["FabricCode"]+"&lt;/td&gt;");
+				 
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+System.Math.Round(Convert.ToDecimal(drOrder["FabricUnitQty"]),3)+"&lt;/td&gt;"); 				
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+System.Math.Round(Convert.ToDecimal(drOrder["PlannedQty"]),3)+"&lt;/td&gt;"); 
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["TeslimŞekli"]+"&lt;/td&gt;");
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["UretimYeri"]+"&lt;/td&gt;");
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["PODate"]+"&lt;/td&gt;");		       
+		        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: right;\"&gt;"+drOrder["MusteriRenkKodu"]+"&lt;/td&gt;"); //5.05.22
+		        
+		        sb.AppendLine("&lt;/tr&gt;");
+		        
+		   }
+		   	sb.AppendLine("&lt;tr id=\"lineTableTr\"&gt; ");
+		   	sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"height: 12px;\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td /&gt;&lt;td id=\"lineTableTd\" /&gt;&lt;td /&gt;&lt;td id=\"lineTableTd\" /&gt; &lt;/tr&gt;"); 
+		}
+		sb.AppendLine("&lt;/tbody&gt; ");
+		sb.AppendLine("&lt;/table&gt; ");			
+	    sb.AppendLine("&lt;/td&gt;");
+		sb.AppendLine("&lt;/tr&gt;");
+		sb.AppendLine("&lt;tr&gt;");
+		sb.AppendLine("&lt;td&gt;");
+		//Beden Listesi
+		
+		if(!BaseObject.CurrentRow.Row.IsNull("SText") &amp;&amp; BaseObject.CurrentRow.Row["SText"]!=null &amp;&amp; !string.IsNullOrEmpty(BaseObject.CurrentRow.Row["SText"].ToString()))        
+            stext=BaseObject.CurrentRow.Row["SText"].ToString();           
+        else stext="XS#@#S#@#M#@#L#@#XL#@#XXL";
+       
+		sb.AppendLine("&lt;table id=\"lineTable\" valign=\"left\" align=\"left\" style=\"margin-top: 5px; align: left;\" &gt;");
+        sb.AppendLine("&lt;tr id=\"lineTableTr\"&gt; ");                                                              
+        sarr=new string[1];
+        sarr[0]="#@#";
+        valueTexts = stext.ToString().Split(sarr , StringSplitOptions.RemoveEmptyEntries);
+        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: left;\"&gt;Renk&lt;/td&gt;");
+        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: left;\"&gt;Lot&lt;/td&gt;");
+      
+        foreach(val in valueTexts ){
+        	if(!String.IsNullOrEmpty(val.ToString())&amp;&amp; !String.IsNullOrWhiteSpace(val.ToString()))
+             	sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;"+val.ToString()+"&lt;/td&gt;");
+            else
+            	sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;&lt;/td&gt;");
+        }
+       
+        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;Toplam&lt;/td&gt;");
+        sb.AppendLine("&lt;/tr&gt;");
+       
+        count=0;
+        bul=false;
+       
+        foreach(drItem in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=2 and ParentItemId is null")){
+            sb.AppendLine("&lt;tr id=\"lineTableTr\"&gt;");
+            sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;"+drItem["OperationCode"].ToString()+"&lt;/td&gt;"); 
+            if(!drItem.IsNull("PackageQuantity"))
+            	sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;"+Convert.ToInt32(drItem["PackageQuantity"])+"&lt;/td&gt;");
+            else
+            	sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;&lt;/td&gt;");
+            count=0;
+            foreach(val in valueTexts ){               
+                count++;
+                foreach(dr in BaseObject.Data.Tables["MA_WorkOrderItemVariant"].Select("WorkOrderItemId="+drItem["RecId"]+"  and SubNo="+count+"")){ 
+                	if(!dr.IsNull("Quantity"))                     
+	                	sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;"+Convert.ToInt32(dr["Quantity"])+"&lt;/td&gt;");                                                                                                                                                                                        
+	               	else
+	               		sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;&lt;/td&gt;"); 	
+	               	bul=true;                                                                                                                                   
+	            }                                                            
+			    if(!bul)                                                                                                            
+			        sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: left;\"&gt;&amp;#160;&lt;/td&gt;");    
+			    bul=false;    
+             } 
+             sb.AppendLine("&lt;td id=\"lineTableTd\" style=\"text-align: center;\"&gt;"+Convert.ToInt32(drItem["Quantity"])+"&lt;/td&gt;");  
+             sb.AppendLine("&lt;/tr&gt;");                                                                                                                     
+         }
+         
+         
+                                     
+         sb.AppendLine("&lt;/table&gt;");
+        sb.AppendLine("&lt;/td&gt;");
+		sb.AppendLine("&lt;/tr&gt;");
+        /*** Maliyet Formu ***/
+        sb.AppendLine("&lt;tr&gt;");
+		sb.AppendLine("&lt;td&gt;");
+        if(!BaseObject.CurrentRow.Row.IsNull("InitialCostId") &amp;&amp; Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])&gt;0){
+		    str="select isnull(I.InventoryName,\'\') Model,isnull(A.CurrentAccountName,\'\') Müşteri,isnull((convert(nvarchar(10),isnull(IC.CostDate,\'\'),104)),\'\') CostDate,isnull(IC.Explanation,\'\') Explanation, InitialCostCode from MA_InitialCost IC with (nolock) "
+		       +"left join IM_Item I with (nolock) on IC.InventoryId=I.RecId left join FI_Account A with (nolock) on A.RecId=IC.CurrentAccountId "
+		       +"where IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"]);
+		    dtICost = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "MA_InitialCost",str);	
+		    
+		    if(dtICost!=null &amp;&amp; dtICost.Rows.Count&gt;0){
+				sb.AppendLine("&lt;table id=\"lineTable\" valign=\"left\"  align=\"left\" style=\"margin-top: 5px; align: left;\" &gt;");
+				sb.AppendLine("&lt;tbody&gt;");
+				sb.AppendLine("&lt;tr&gt;&lt;th style=\"text-align: left; color: Blue;height:15px; \" colspan=\"2\" valign=\"center\" &gt;"+BaseObject.ActiveSession.Company.CompanyCode+"  "+BaseObject.ActiveSession.Company.CompanyName+"&lt;/th&gt;&lt;th style=\"text-align: right; color: Blue;\"&gt;"+DateTime.Now.ToString("dd MMMM yyyy,dddd HH:mm:ss")+"&lt;/th&gt;&lt;/tr&gt;");
+		    	sb.AppendLine("&lt;tr&gt;&lt;td style=\"text-align: left; color: Red; height:30px;\"  colspan=\"2\" valign=\"center\"&gt;ÖN MALİYET TABLOSU&lt;/td&gt;&lt;/tr&gt;");	sb.AppendLine("&lt;/tr&gt;");
+				sb.AppendLine("&lt;tr&gt;&lt;td style=\"text-align: left; width:25%; font-weight:bold; \"&gt;MODEL         &lt;/td&gt;&lt;td style=\"text-align: left;\"&gt;"+dtICost.Rows[0]["Model"]+"&lt;/td&gt;&lt;/tr&gt;");
+				sb.AppendLine("&lt;tr&gt;&lt;td style=\"text-align: left; width:25%; font-weight:bold; \"&gt;MÜŞTERİ       &lt;/td&gt;&lt;td style=\"text-align: left;\"&gt;"+dtICost.Rows[0]["Müşteri"]+"&lt;/td&gt;&lt;/tr&gt;");
+				sb.AppendLine("&lt;tr&gt;&lt;td style=\"text-align: left; width:25%; font-weight:bold; \"&gt;ORDER         &lt;/td&gt;&lt;td style=\"text-align: left;\"&gt;"+BaseObject.CurrentRow.Row["WorkOrderNo"]+"&lt;/td&gt;&lt;/tr&gt;");
+				sb.AppendLine("&lt;tr&gt;&lt;td style=\"text-align: left; width:25%; font-weight:bold; \"&gt;MALİYET NO    &lt;/td&gt;&lt;td style=\"text-align: left;\"&gt;"+dtICost.Rows[0]["InitialCostCode"]+"&lt;/td&gt;&lt;/tr&gt;");
+			    sb.AppendLine("&lt;tr&gt;&lt;td style=\"text-align: left; width:25%; font-weight:bold; \"&gt;MALİYET TARİHİ&lt;/td&gt;&lt;td style=\"text-align: left;\"&gt;"+dtICost.Rows[0]["CostDate"]+"&lt;/td&gt;&lt;/tr&gt;");
+			    sb.AppendLine("&lt;tr&gt;&lt;td style=\"text-align: left; width:25%; font-weight:bold; \"&gt;AÇIKLAMA      &lt;/td&gt;&lt;td style=\"text-align: left;\"&gt;"+dtICost.Rows[0]["Explanation"]+"&lt;/td&gt;&lt;/tr&gt;");
+			    sb.AppendLine("&lt;/tbody&gt;");
+				sb.AppendLine("&lt;/table&gt;");			
+				 
+			}
+		
+			sb.AppendLine("&lt;/td&gt;");
+		    sb.AppendLine("&lt;/tr&gt;");
+			/*** Ön Maliyet Detaylari ***/
+			sb.AppendLine("&lt;tr&gt;");
+	    	sb.AppendLine("&lt;td&gt;");
+		   	sb.AppendLine("&lt;table border=\"0\"  align=\"left\" style=\"margin-top: 5px;\" &gt;");
+			sb.AppendLine("&lt;tbody&gt;");
+			sb.AppendLine("&lt;tr&gt;&lt;td&gt;");
+			sb.AppendLine("&lt;table id=\"costLineTable\"&gt;");
+			sb.AppendLine("&lt;tbody&gt;");
+			sb.AppendLine("&lt;tr id=\"costLineTableTr\"&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: left;font-size:11px;\"  width=\"43%\" &gt;MALİYET CİNSİ / KULLANILAN MALZEME&lt;/td&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: right;font-size:11px;\"  width=\"8%\"&gt;BİRİM FİYAT&lt;/td&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: right;font-size:11px;\"  width=\"7%\"&gt;DÖV.FİYAT&lt;/td&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: center;font-size:11px;\" width=\"5%\"&gt;DÖV.&lt;/td&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: right;font-size:11px;\"  width=\"5%\"&gt;MİKTAR&lt;/td&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: center;font-size:11px;\" width=\"5%\"&gt;BİRİM&lt;/td&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: right;font-size:11px;\"  width=\"5%\"&gt;FİRE%&lt;/td&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: right;font-size:11px;\"  width=\"10%\"&gt;TUTAR&lt;/td&gt;");
+			sb.AppendLine("&lt;td id=\"lineTableTdHeader\" style=\"text-align: right;font-size:11px;\"  width=\"10%\"&gt;DÖVİZ TUTAR&lt;/td&gt;");
+			sb.AppendLine("&lt;/tr&gt; ");
+			
+			costItem.AppendLine("select 0 TType,\'Kumaş Maliyeti\' Hammadde,0 Quantity,\'\' Unit,0 Wastage,0 UnitPrice,\'\' ForexCode,0 ForexUnitPrice,0 ForexRate ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount ");
+			costItem.AppendLine(",isnull(round(isnull(case when isnull(IC.CostAmount1,0)&gt;0 then  100*sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0))/isnull(IC.CostAmount1,0) else 0 end,0),2),0) PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId left join IM_Item I with (nolock) on I.RecId=ICI.InventoryId left join MA_InitialCostCard MIC with (nolock) on MIC.RecId=ICI.InitialCostCardId  ");
+			costItem.AppendLine("where ICI.CostItemType=1 and (MIC.Code in (\'01\') or I.AccessCode in (\'FABRIC\',\'YARN\') )  and IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+" group by IC.CostAmount1 ");
+			costItem.AppendLine("union all ");
+			costItem.AppendLine("select 1 TType,isnull((case when  isnull(isnull(I.InventoryCode,\'\')+\'-\'+isnull(I.InventoryName,\'\'),\'\')&lt;&gt;\'-\' then isnull(isnull(I.InventoryCode,\'\')+\'-\'+isnull(I.InventoryName,\'\'),\'\') else isnull(ICI.Explanation,\'\') end),\'\') Hammadde,isnull(ICI.Quantity,0) Quantity ");
+			costItem.AppendLine(",isnull(USI.UnitCode,\'\') Unit,isnull(ICI.Wastage,0) Wastage,isnull(ICI.UnitPrice,0) UnitPrice,isnull(F.ForexCode,\'\') ForexCode,isnull(ICI.ForexUnitPrice,0) ForexUnitPrice ,isnull(ICI.ForexRate,0) ForexRate ");
+			costItem.AppendLine(",isnull(((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount ");
+			costItem.AppendLine(",isnull(((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount ");
+			costItem.AppendLine(",0 PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId ");
+			costItem.AppendLine("left join IM_Item I with (nolock) on I.RecId=ICI.InventoryId left join MD_Forex F with (nolock) on F.RecId=ICI.ForexId left join MD_UnitSetItem USI with (nolock) on USI.RecId=ICI.UnitId left join MA_InitialCostCard MIC with (nolock) on MIC.RecId=ICI.InitialCostCardId ");
+			costItem.AppendLine("where ICI.CostItemType=1 and (MIC.Code in (\'01\') or I.AccessCode in (\'FABRIC\',\'YARN\') )  and IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+"   ");
+			costItem.AppendLine("union all ");
+			costItem.AppendLine("select 0 TType,\'Aksesuar Maliyeti\' Hammadde,0 Quantity,\'\' Unit,0 Wastage,0 UnitPrice,\'\' ForexCode,0 ForexUnitPrice,0 ForexRate ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount ");
+			costItem.AppendLine(",isnull(round(isnull(case when isnull(IC.CostAmount1,0)&gt;0 then  100*sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0))/isnull(IC.CostAmount1,0) else 0 end,0),2),0) PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId left join IM_Item I with (nolock) on I.RecId=ICI.InventoryId left join MA_InitialCostCard MIC with (nolock) on MIC.RecId=ICI.InitialCostCardId  ");
+			costItem.AppendLine("where ICI.CostItemType=1 and (MIC.Code in (\'02\') or I.AccessCode=\'TRIM\' ) and IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+"   group by IC.CostAmount1 ");
+			costItem.AppendLine("union all ");
+			costItem.AppendLine("select  1 TType,isnull((case when  isnull(isnull(I.InventoryCode,\'\')+\'-\'+isnull(I.InventoryName,\'\'),\'\')&lt;&gt;\'-\' then isnull(isnull(I.InventoryCode,\'\')+\'-\'+isnull(I.InventoryName,\'\'),\'\') else isnull(ICI.Explanation,\'\') end),\'\') Hammadde,isnull(ICI.Quantity,0) Quantity,isnull(USI.UnitCode,\'\') Unit,isnull(ICI.Wastage,0) Wastage,isnull(ICI.UnitPrice,0) UnitPrice,isnull(F.ForexCode,\'\') ForexCode,isnull(ICI.ForexUnitPrice,0) ForexUnitPrice ,isnull(ICI.ForexRate,0) ForexRate ");
+			costItem.AppendLine(",isnull(((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount ");
+			costItem.AppendLine(",isnull(((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount ");
+			costItem.AppendLine(",0 PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId ");
+			costItem.AppendLine("left join IM_Item I with (nolock) on I.RecId=ICI.InventoryId left join MD_Forex F with (nolock) on F.RecId=ICI.ForexId left join MD_UnitSetItem USI with (nolock) on USI.RecId=ICI.UnitId left join MA_InitialCostCard MIC with (nolock) on MIC.RecId=ICI.InitialCostCardId ");
+			costItem.AppendLine("where ICI.CostItemType=1 and (MIC.Code in (\'02\') or I.AccessCode=\'TRIM\' ) and IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+" ");
+			costItem.AppendLine("union all ");
+			costItem.AppendLine("select 0 TType,\'İşçilik Maliyeti\' Hammadde,0 Quantity,\'\' Unit,0 Wastage,0 UnitPrice,\'\' ForexCode,0 ForexUnitPrice,0 ForexRate ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount  ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount  ");
+			costItem.AppendLine(",isnull(round(isnull(case when isnull(IC.CostAmount1,0)&gt;0 then  100*sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0))/isnull(IC.CostAmount1,0) else 0 end,0),2),0) PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId ");
+			costItem.AppendLine("where ICI.CostItemType=2 and IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+"  group by IC.CostAmount1 ");
+			costItem.AppendLine("union all ");
+			costItem.AppendLine("select 1 TType,isnull(ICI.Explanation,\'\') Hammadde,isnull(ICI.Quantity,0) Quantity,\'Adet\' Unit,isnull(ICI.Wastage,0) Wastage,isnull(ICI.UnitPrice,0) UnitPrice,isnull(F.ForexCode,\'\') ForexCode,isnull(ICI.ForexUnitPrice,0) ForexUnitPrice ,isnull(ICI.ForexRate,0) ForexRate ");
+			costItem.AppendLine(",isnull(((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount ");
+			costItem.AppendLine(",isnull(((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount ");
+			costItem.AppendLine(",0 PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId  ");
+			costItem.AppendLine("left join IM_Item I with (nolock) on I.RecId=ICI.InventoryId left join MD_Forex F with (nolock) on F.RecId=ICI.ForexId ");
+			costItem.AppendLine("where ICI.CostItemType=2  and IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+"  ");
+			costItem.AppendLine("union all ");
+			costItem.AppendLine("select 0 TType,\'Genel Gider Maliyeti\' Hammadde,0 Quantity,\'\' Unit,0 Wastage,0 UnitPrice,\'\' ForexCode,0 ForexUnitPrice,0 ForexRate ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount ");
+			costItem.AppendLine(",isnull(round(isnull(case when isnull(IC.CostAmount1,0)&gt;0 then  100*sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0))/isnull(IC.CostAmount1,0) else 0 end,0),2),0) PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId  ");
+			costItem.AppendLine("where ICI.CostItemType=3 and IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+"  group by IC.CostAmount1 ");
+			costItem.AppendLine("union all ");
+			costItem.AppendLine("select 1 TType,isnull(ICI.Explanation,\'\')  Hammadde,isnull(ICI.Quantity,0) Quantity,\'Adet\' Unit,isnull(ICI.Wastage,0) Wastage,isnull(ICI.UnitPrice,0) UnitPrice,isnull(F.ForexCode,\'\') ForexCode,isnull(ICI.ForexUnitPrice,0) ForexUnitPrice ,isnull(ICI.ForexRate,0) ForexRate ");
+			costItem.AppendLine(",isnull(((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount ");
+			costItem.AppendLine(",isnull(((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount ");
+			costItem.AppendLine(",0 PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId ");
+			costItem.AppendLine("left join IM_Item I with (nolock) on I.RecId=ICI.InventoryId left join MD_Forex F with (nolock) on F.RecId=ICI.ForexId ");
+			costItem.AppendLine("where ICI.CostItemType=3 and IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+" ");   
+			costItem.AppendLine("union all ");
+			costItem.AppendLine("select 0 TType,\'Genel Toplam\' Hammadde,0 Quantity,\'\' Unit,0 Wastage,0 UnitPrice,\'\' ForexCode,0 ForexUnitPrice,0 ForexRate ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0)),0) Amount ");
+			costItem.AppendLine(",isnull(sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.ForexUnitPrice,0)),0) ForexAmount ");
+			costItem.AppendLine(",isnull(round(isnull(case when isnull(IC.CostAmount1,0)&gt;0 then  100*sum((isnull(ICI.Quantity,0)+isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0)/100)*isnull(ICI.UnitPrice,0))/isnull(IC.CostAmount1,0) else 0 end,0),2),0) PercentCost ");
+			costItem.AppendLine("from MA_InitialCost IC with (nolock) left join MA_InitialCostItem ICI with (nolock) on IC.RecId=ICI.InitialCostId ");
+			costItem.AppendLine("where  IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+"  group by IC.CostAmount1 ");
+					 
+		    dtCost = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "MA_InitialCostItem",costItem.ToString());	
+          
+            if(dtCost!=null &amp;&amp; dtCost.Rows.Count&gt;0){
+				foreach(drCost in dtCost.Rows){
+					sb.AppendLine("&lt;tr id=\"costLineTableTr\"&gt;");
+					if(Convert.ToInt16(drCost["TType"])==0){
+					    sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: left;\"&gt;"+drCost["Hammadde"]+" ("+System.Math.Round(Convert.ToDecimal(drCost["PercentCost"]),2)+" %)&lt;/td&gt;"); 
+				    	sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;&lt;/td&gt;");  
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;&lt;span style=\"padding-right: 2px;\"&gt;"+System.Math.Round(Convert.ToDecimal(drCost["Amount"]),2)+"&lt;/span&gt;&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;"+System.Math.Round(Convert.ToDecimal(drCost["ForexAmount"]),2)+"&lt;/td&gt;");  
+					}
+					else{
+					    sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: left; padding-left: 50px;\"&gt;"+drCost["Hammadde"]+"&lt;/td&gt;"); 	
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;"+System.Math.Round(Convert.ToDecimal(drCost["UnitPrice"]),2)+"&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;"+System.Math.Round(Convert.ToDecimal(drCost["ForexUnitPrice"]),4)+"&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;"+drCost["ForexCode"]+"&lt;/td&gt;");  
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;"+System.Math.Round(Convert.ToDecimal(drCost["Quantity"]),2)+"&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;"+drCost["Unit"]+"&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;"+System.Math.Round(Convert.ToDecimal(drCost["Wastage"]),2)+"&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;&lt;span style=\"padding-right: 2px;\"&gt;"+System.Math.Round(Convert.ToDecimal(drCost["Amount"]),2)+"&lt;/span&gt;&lt;/td&gt;"); 
+						sb.AppendLine("&lt;td id=\"costLineTableTd\" style=\"text-align: right;\"&gt;"+System.Math.Round(Convert.ToDecimal(drCost["ForexAmount"]),2)+"&lt;/td&gt;");  
+						sb.AppendLine("&lt;/tr&gt;");
+					}
+				} 
+		    }
+		    
+	        sb.AppendLine("&lt;/tbody&gt;");
+            sb.AppendLine("&lt;/table&gt;");
+            sb.AppendLine("&lt;/td&gt;&lt;/tr&gt;");
+	        sb.AppendLine("&lt;tr&gt;&lt;td&gt;");
+	        
+	        /*** Maliyet Toplamalari ve Gerçek Kar 
+	        sb.AppendLine("&lt;table id=\"costTotalTable\" align=\"right\"&gt;");
+			sb.AppendLine("&lt;tbody&gt;");
+			
+			profitCost.AppendLine("select isnull(CostAmount1,0) CostAmount ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(CostAmount1,0)/isnull(ForexRate,0) else 0 end),0) CostAmountForex ");
+			profitCost.AppendLine(",isnull(WastagePercent,0) WastagePercent ,isnull(WastageAmount,0) WastageAmount  ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(WastageAmount,0)/isnull(ForexRate,0) else 0 end),0) WastageAmountForex ");
+			profitCost.AppendLine(",isnull(GeneralExpensePercent,0) GeneralExpensePercent ,isnull(GeneralExpenseAmount,0) GeneralExpenseAmount ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(GeneralExpenseAmount,0)/isnull(ForexRate,0) else 0 end),0) GeneralExpenseAmountForex ");
+			profitCost.AppendLine(",isnull(Wastage2Percent,0) Wastage2Percent,isnull(Wastage2Amount,0) Wastage2Amount ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(Wastage2Amount,0)/isnull(ForexRate,0) else 0 end),0) Wastage2AmountForex ");
+			profitCost.AppendLine(",isnull(ProfitPercent,0) ProfitPercent,isnull(ProfitAmount,0) ProfitAmount ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(ProfitAmount,0)/isnull(ForexRate,0) else 0 end),0) ProfitAmountForex  ");
+			profitCost.AppendLine(",isnull(CommissionPercent,0) CommissionPercent,isnull(CommissionAmount,0) CommissionAmount ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(CommissionAmount,0)/isnull(ForexRate,0) else 0 end),0) CommissionAmountForex ");
+			profitCost.AppendLine(",isnull(CalculatedPrice,0) CalculatedPrice ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(CalculatedPrice,0)/isnull(ForexRate,0) else 0 end),0) CalculatedPriceForex  ");
+			profitCost.AppendLine(",isnull(DiscountPercent,0),isnull(DiscountAmount,0) DiscountAmount ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(DiscountAmount,0)/isnull(ForexRate,0) else 0 end),0) DiscountAmountForex ");
+			profitCost.AppendLine(",isnull((isnull(CalculatedPrice,0)-isnull(DiscountAmount,0)),0) NetPrice ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull(CalculatedPrice,0)/isnull(ForexRate,0) else 0 end),0)-isnull((case when isnull(ForexRate,0)&gt;0 then isnull(DiscountAmount,0)/isnull(ForexRate,0) else 0 end),0) NetPriceForex  ");
+			profitCost.AppendLine(",isnull((case when  isnull(GivenPriceForexRate,0)=0 or isnull(GivenPriceForexRate,0)=1 then  isnull(GivenPrice,0) when ISNULL(GivenPriceForexRate,0)&gt;0 then ISNULL(GivenPriceForexRate,0)*isnull(GivenPrice,0)  else 0 end),0) GivenPrice  ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 and isnull(ForexId,0)&gt;0 and isnull(GivenPrice,0)&gt;0 then (isnull(GivenPrice,0)/isnull(ForexRate,0))*(case when isnull(GivenPriceForexRate,0)=0 then 1 else isnull(GivenPriceForexRate,0) end) end  ),0) GivenPriceForex   ");
+			profitCost.AppendLine(",isnull((case when (isnull(CalculatedPrice,0)-(isnull(ProfitAmount,0)+isnull(CommissionAmount,0)))&gt;0 then ((isnull((case when  isnull(GivenPriceForexRate,0)=0 or isnull(GivenPriceForexRate,0)=1 then  isnull(GivenPrice,0) when ISNULL(GivenPriceForexRate,0)&gt;0 then isnull(round(ISNULL(GivenPriceForexRate,0)*isnull(GivenPrice,0),2),0) else 0 end ),0)-isnull(CalculatedPrice,0))+isnull(ProfitAmount,0))*100 /(isnull(CalculatedPrice,0)-(isnull(ProfitAmount,0)+isnull(CommissionAmount,0))) else 0 end),0) RealProfitPercent  ");
+			profitCost.AppendLine(",isnull((case when  isnull(GivenPriceForexRate,0)=0 or isnull(GivenPriceForexRate,0)=1 then  isnull(GivenPrice,0) when ISNULL(GivenPriceForexRate,0)&gt;0 then ISNULL(GivenPriceForexRate,0)*isnull(GivenPrice,0)  else 0 end ),0)-isnull(CalculatedPrice,0)+isnull(ProfitAmount,0) RealProfitAmount  ");
+			profitCost.AppendLine(",isnull((case when isnull(ForexRate,0)&gt;0 then isnull((isnull((case when  isnull(GivenPriceForexRate,0)=0 or isnull(GivenPriceForexRate,0)=1 then  isnull(GivenPrice,0) when ISNULL(GivenPriceForexRate,0)&gt;0 then ISNULL(GivenPriceForexRate,0)*isnull(GivenPrice,0)  else 0 end ),0)-isnull(CalculatedPrice,0)+isnull(ProfitAmount,0)),0)/isnull(ForexRate,0) else 0 end),0) RealProfitAmountForex  ");
+			profitCost.AppendLine(",isnull(F.ForexCode,\'\') ForexCode,isnull(IC.ForexRate,0) ForexRate  ");
+			profitCost.AppendLine("from MA_InitialCost IC with (nolock) left join MD_Forex F with (nolock) on F.RecId=IC.ForexId  ");
+			profitCost.AppendLine("where IC.RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["InitialCostId"])+"  ");
+			
+			dtProfitCost = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "ProfitCost",profitCost.ToString());	
+	        if(dtProfitCost!=null &amp;&amp; dtProfitCost.Rows.Count&gt;0){
+				sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;TOPLAM MALİYET   &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;                                                                &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["CostAmount"]),2)+"           &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["CostAmountForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;İMALAT FİRESİ    &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;%"+Convert.ToInt32(dtProfitCost.Rows[0]["WastagePercent"])+"       &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["WastageAmount"]),2)+"        &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["WastageAmountForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;GENEL GİDER      &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;%"+Convert.ToInt32(dtProfitCost.Rows[0]["GeneralExpensePercent"])+"&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["GeneralExpenseAmount"]),2)+" &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["GeneralExpenseAmountForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;FİRE 2           &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;%"+Convert.ToInt32(dtProfitCost.Rows[0]["Wastage2Percent"])+"      &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["Wastage2Amount"]),2)+"       &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["WastageAmountForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;KAR              &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;%"+Convert.ToInt32(dtProfitCost.Rows[0]["ProfitPercent"])+"        &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["ProfitAmount"]),2)+"         &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["ProfitAmountForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;KOMİSYON         &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;%"+Convert.ToInt32(dtProfitCost.Rows[0]["CommissionPercent"])+"    &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["CommissionAmount"]),2)+"     &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["CommissionAmountForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;HESAPLANAN FİYAT &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;                                                                &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["CalculatedPrice"]),2)+"      &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["CalculatedPriceForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;SATIŞ FİYAT      &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;                                                                &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["GivenPrice"]),2)+"           &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["GivenPriceForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;GERÇEK KAR %     &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;%"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["RealProfitPercent"]),2)+"     &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["RealProfitAmount"]),2)+"     &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["RealProfitAmountForex"]),2)+"&lt;/td&gt;&lt;/tr&gt; ");
+	            sb.AppendLine("&lt;tr id=\"costTotalTableTr\"&gt;&lt;td id=\"costTotalTableTd\" width=\"43%\"&gt;&lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"7%\"&gt;&lt;/td&gt;&lt;td colspan=\"4\" id=\"costTotalTableTd\" style=\"text-align: left; padding-left:40px; font-size:11px; font-style: bold;\" width=\"22%\"&gt;DÖVİZ KURU       &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: left;\" width=\"6%\"&gt;"+dtProfitCost.Rows[0]["ForexCode"].ToString()+"                &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"12%\"&gt;"+System.Math.Round(Convert.ToDecimal(dtProfitCost.Rows[0]["ForexRate"]),4)+"          &lt;/td&gt;&lt;td id=\"costTotalTableTd\" style=\"text-align: right;\" width=\"10%\"&gt;&lt;/td&gt;&lt;/tr&gt; "); 
+	        }    
+            
+            sb.AppendLine("&lt;/tbody&gt; ");
+            sb.AppendLine("&lt;/table&gt; "); 
+	        sb.AppendLine("&lt;/td&gt;&lt;/tr&gt;");
+	          ***/
+            sb.AppendLine("&lt;/tbody&gt; ");
+            sb.AppendLine("&lt;/table&gt; ");
+        }		   
+        sb.AppendLine("&lt;/td&gt;");
+		sb.AppendLine("&lt;/tr&gt;");
+		sb.AppendLine("&lt;/tbody&gt; ");
+        sb.AppendLine("&lt;/table&gt; ");
+        sb.AppendLine("&lt;/div&gt;");
+		sb.AppendLine("&lt;/body&gt; ");
+		sb.AppendLine("&lt;/html&gt; ");	
+		 
+	    
+        UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,"update MA_WorkOrder set UD_SendMail=0 where RecId="+Convert.ToInt64(BaseObject.CurrentRow.Row["RecId"])+"  "); 
+        taskm=BaseObject.Container.Resolve&lt;|TaskMessageService|&gt;("TaskMessageService");
+	    taskm.SendEmail(BaseObject.ActiveSession.User.EMail.ToString(),"Order Formu",sb.ToString());
+	     
+	   
+    }
+}</ScriptText>
+</ScriptDefinition>

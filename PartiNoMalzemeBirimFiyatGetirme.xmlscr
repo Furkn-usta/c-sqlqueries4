@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PartiNoMalzemeBirimFiyatGetirme" Enabled="true" Priority="0" ScriptName="PartiNoMalzemeBirimFiyatGetirme">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChanged" ObjectName="InventoryReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 20.02.2024 09:20:10 PartiNoMalzemeBirimFiyatGetirme
+
+
+function OnColumnChanged(sender, ev)
+{
+	if( BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null )
+		return null;
+		//Fiş tipleri revize edielcek
+	if(BaseObject.Name!="InventoryReceiptEN" 
+	|| ev.Row.Table.TableName != "IM_ReceiptItem")	 
+         return null;	
+		 
+     if(ev.Row.IsNull("InventoryId") 
+	 || ev.Row.IsNull("ReceiptType") 
+	 || ev.Row.IsNull("PartyNo") 
+	 || ev.Row["ReceiptType"].ToString() == "11"
+	 || ev.Row["ReceiptType"].ToString() == "1"
+	 || ev.Row["ReceiptType"].ToString() == "16"
+	 || ev.Row["ItemType"].ToString() != "1"
+	 ) 
+        return null;
+        
+        if(ev.Column.ColumnName=="InventoryId" || ev.Column.ColumnName=="PartyNo")
+        {
+                    sb = new StringBuilder();
+                    sb.Clear();
+                    sb.AppendLine("select case when isnull(RI.ForexId,0)=0 then isnull(RI.UnitPrice,0)");
+					sb.AppendLine("when isnull(RI.ForexId,0)!=0 then isnull(RI.ForexUnitPrice,0) end [price]");
+					sb.AppendLine(",isnull(RI.ForexId,0) [forex_id]");
+					sb.AppendLine(",isnull(R.ReceiptType,0) [rec_type]");
+					sb.AppendLine("from IM_ReceiptItem RI with (nolock)");
+					sb.AppendLine("left join IM_Receipt R with (nolock) on R.RecId=RI.InventoryReceiptId");
+					sb.AppendLine("where RI.InventoryId=\'"+ev.Row["InventoryId"].ToString()+"\' and RI.PartyNo=\'"+ev.Row["PartyNo"].ToString()+"\' and RI.ReceiptType in (1,16,11) ");
+					sb.AppendLine("order by R.ReceiptType asc");	
+                    //MessageBox.Show(sb.ToString());
+                    dt_sb = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb",sb.ToString());
+                   
+                   
+                    if(dt_sb != null &amp;&amp; dt_sb.Rows.Count &gt; 0)
+                        {
+	                        for(i=0; i&lt;dt_sb.Rows.Count; i++)
+	                        {
+		                        if(dt_sb.Rows[i]["rec_type"].ToString()=="1" || dt_sb.Rows[i]["rec_type"].ToString()=="11")
+		                        {
+		                        	if(Convert.ToInt32(dt_sb.Rows[i]["forex_id"]) == 0)
+		                        	{
+		                            	ev.Row.SetField&lt;|decimal|&gt;("UnitPrice",Convert.ToDecimal(dt_sb.Rows[i]["price"]));
+		                            	ev.Row.SetField&lt;|decimal|&gt;("ForexRate",Convert.ToDecimal(dt_sb.Rows[i]["forex_id"]));
+		                            }
+		                            else
+		                            {
+		                            	ev.Row.SetField&lt;|int|&gt;("ForexId",Convert.ToInt32(dt_sb.Rows[i]["forex_id"]));
+		                            	ev.Row.SetField&lt;|decimal|&gt;("ForexUnitPrice",Convert.ToDecimal(dt_sb.Rows[i]["price"]));
+		                            }
+		                        }
+		                          if(dt_sb.Rows[i]["rec_type"].ToString()!="11")
+		                        {
+		                        	if(Convert.ToInt32(dt_sb.Rows[0]["forex_id"]) == 0)
+		                        	{
+		                            	ev.Row.SetField&lt;|decimal|&gt;("UnitPrice",Convert.ToDecimal(dt_sb.Rows[0]["price"]));
+		                            	ev.Row.SetField&lt;|decimal|&gt;("ForexRate",Convert.ToDecimal(dt_sb.Rows[0]["forex_id"]));
+		                            }
+		                            else
+		                            {
+		                            	ev.Row.SetField&lt;|int|&gt;("ForexId",Convert.ToInt32(dt_sb.Rows[0]["forex_id"]));
+		                            	ev.Row.SetField&lt;|decimal|&gt;("ForexUnitPrice",Convert.ToDecimal(dt_sb.Rows[0]["price"]));
+		                            }
+		                        }
+	                         }
+                        }
+                       
+        }
+}
+</ScriptText>
+</ScriptDefinition>

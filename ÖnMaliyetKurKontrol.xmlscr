@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ÖnMaliyetKurKontrol2" Enabled="true" Priority="0" ScriptName="ÖnMaliyetKurKotrol2">
+  <Events>
+    <Event Enabled="true" ObjectName="InitialCostEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InitialCostEN" />
+  </Events>
+  <Histories>
+    <History EditedBy="System generated" EntryDate="2022-08-03T22:40:28.1777815+03:00">
+      <Change>System default version</Change>
+    </History>
+  </Histories>
+  <ScriptText>	     function OnBeforePost(sender ,eventArg)
+{
+	    if(BaseObject != null || BaseObject.CurrentRow != null || BaseObject.CurrentRow.Row!=null  || BaseObject.CurrentRow.Row.IsNull("MA_InitialCost") || BaseObject.CurrentRow.Row["MA_InitialCost"].ToString()=="")
+	     {
+	      if((BaseObject.CurrentRow.Row.IsNull("ForexRate")) &amp;&amp; (BaseObject.CurrentRow.Row.IsNull("Forex2Rate")) &amp;&amp;(BaseObject.CurrentRow.Row.IsNull("ForexId"))&amp;&amp;(BaseObject.CurrentRow.Row.IsNull("Forex2Id")))
+ {
+ 	sender.ShowMessage("Kur Eksik Tanımlanamaz!");
+    eventArg.Cancel=true;
+    return null;  
+ }
+ else
+ {
+ foreach(dr in BaseObject.Data.Tables["MA_InitialCostItem"].Select("RecId is not null"))
+ {
+			if(dr.RowState!=DataRowState.Deleted &amp;&amp; dr.RowState!=DataRowState.Detached)
+			{
+				ustDoviz=BaseObject.CurrentRow.Row["ForexRate"]; 
+				ustDoviz2=BaseObject.CurrentRow.Row["Forex2Rate"];
+				satirDoviz=dr["ForexRate"];
+				ustDovizBirim1=BaseObject.CurrentRow.Row["ForexId"];
+				satirDovizBirim=dr["ForexId"];
+				ustDovizBirim2=BaseObject.CurrentRow.Row["Forex2Id"];
+				
+				
+				if(((ustDovizBirim1!=satirDovizBirim) || (satirDoviz&gt;ustDoviz))&amp;&amp; ((ustDovizBirim2!=satirDovizBirim)))
+					{
+						BaseObject.ShowMessage("Üst döviz ile satır kuru kontrol ediniz.   src:{Ön Maliyet Kur Kontrol}");
+		
+						eventArg.Cancel=true;
+			  	    	return null;
+			  	    
+					}
+				
+						else if(((ustDovizBirim2!=satirDovizBirim) || (satirDoviz&gt;ustDoviz2))&amp;&amp; ((ustDovizBirim1!=satirDovizBirim)))
+							{
+				
+				
+								BaseObject.ShowMessage("Üst döviz else if ile satır dövizlerin birimi aynı değil. Lütfen kontrol ediniz.   src:{Ön Maliyet Kur Kontrol}");
+		
+								eventArg.Cancel=true;
+			  	    			return null;
+				}		
+			
+			
+					else if ((ustDovizBirim2!=(satirDovizBirim==null)) || (ustDovizBirim1!=(satirDovizBirim==null)) &amp;&amp; !((ustDoviz2&gt;satirDoviz) || (ustDoviz2&gt;satirDoviz)))
+				{
+				 	BaseObject.ShowMessage("tl deneme");
+				}
+		
+		       }
+		    }
+			
+	 	}
+ 
+ }
+ }
+ 
+</ScriptText>
+</ScriptDefinition>

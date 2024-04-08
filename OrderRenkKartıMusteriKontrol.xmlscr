@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderRenkKartıMusteriKontrol" Enabled="true" Priority="0" ScriptName="OrderRenkKartıMusteriKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 04.03.2024 10:33:20 OrderRenkKartıMusteriKontrol
+
+function OnAfterSucceededPost(sender, ev)
+{
+	if( BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("WorkOrderType")
+	|| BaseObject.CurrentRow.Row.IsNull("CurrentAccountId")
+    || BaseObject.CurrentRow.Row.IsNull("RecId")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderType"]) != 15)
+		return null;
+	
+	  sb = new StringBuilder();
+      inv_code_ = "";
+      foreach(ri in BaseObject.Data.Tables["MA_RecipeItem"].Select("InventoryId is not null and WorkOrderReceiptId is not null"))// and IsMaster = 1 and IsCutting = 1
+      {
+            inv_ = ri["InventoryId"].ToString();
+           
+            query ="select top 1 isnull(I.InventoryCode,\'\') [inv_code] from IM_Item I with (nolock) where I.CompanyId = \'"+BaseObject.ActiveSession.Company.RecId+"\' and I.RecId=\'"+inv_.ToString()+"\'";
+            dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query.ToString());
+
+            if(dt != null &amp;&amp; dt.Rows.Count &gt; 0)
+                    {
+                            inv_code_ = dt.Rows[0]["inv_code"].ToString();
+                             //MessageBox.Show(inv_code_.ToString());
+
+                    }  
+			query2 = " select top 1 isnull(VI.ItemCode,\'\') [renk] from MA_RecipeItem RI with(nolock)";
+			query2 += " left join MA_WorkOrder WO with(nolock) on WO.RecId=RI.WorkOrderReceiptId";
+			query2 += " left join IM_ItemColor IC with(nolock) on IC.RecipeItemId=RI.RecId";
+			query2 += " left join IM_VariantItem VI with(nolock) on VI.RecId=IC.VariantItemId";
+			query2 += " where WO.RecId=\'"+BaseObject.CurrentRow.Row["RecId"].ToString()+"\'";
+			query2 += " and RI.RecId=\'"+ri["RecId"].ToString()+"\'";
+			query2 += " and WO.CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\'";
+		//MessageBox.Show(query2);
+            dt2 = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt2",query2.ToString());
+
+            if(dt2 != null &amp;&amp; dt2.Rows.Count &gt; 0)
+                    {
+                            renk_ = dt2.Rows[0]["renk"].ToString();
+                             //MessageBox.Show(inv_code_.ToString());
+                    }  
+			
+            foreach(woi in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=2 and ParentItemId is null and RecId is not null")) 
+            {
+                sb.Clear();
+                sb.AppendLine("select case when (select F.RecId from FI_Account F with (nolock) where F.CurrentAccountName=isnull(VI.UD_Firma1,\'\') and isnull(VI.UD_Kumas1,\'\')=\'"+inv_code_.ToString()+"\'  and CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\')=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\'");
+                sb.AppendLine("then VI.UD_FirmaDip1");
+                sb.AppendLine("when (select F.RecId from FI_Account F with (nolock) where F.CurrentAccountName=isnull(VI.UD_Firma2,\'\') and isnull(VI.UD_Kumas2,\'\')=\'"+inv_code_.ToString()+"\' and CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\')=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\'");
+                sb.AppendLine("then VI.UD_FirmaDip2");
+                sb.AppendLine("when (select F.RecId from FI_Account F with (nolock) where F.CurrentAccountName=isnull(VI.UD_Firma3,\'\') and isnull(VI.UD_Kumas3,\'\')=\'"+inv_code_.ToString()+"\' and CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\')=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\'");
+                sb.AppendLine("then VI.UD_FirmaDip3");
+                sb.AppendLine("when (select F.RecId from FI_Account F with (nolock) where F.CurrentAccountName=isnull(VI.UD_Firma4,\'\') and isnull(VI.UD_Kumas4,\'\')=\'"+inv_code_.ToString()+"\' and CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\')=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\'");
+                sb.AppendLine("then VI.UD_FirmaDip4");
+                sb.AppendLine("end [okeylenen_renk] from IM_VariantItem VI with (nolock)");
+                sb.AppendLine("where VI.CompanyId = \'"+BaseObject.ActiveSession.Company.RecId+"\' and (isnull(VI.ItemCode,\'\')=\'"+renk_.ToString()+"\' or isnull(VI.ItemName,\'\')=\'"+renk_.ToString()+"\') ");
+                sb.AppendLine("and ((select F.RecId from FI_Account F with (nolock) where F.CurrentAccountName=isnull(VI.UD_Firma1,\'\') and CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\')=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\'");
+                sb.AppendLine("or (select F.RecId from FI_Account F with (nolock) where F.CurrentAccountName=isnull(VI.UD_Firma2,\'\') and CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\')=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\'");
+                sb.AppendLine("or (select F.RecId from FI_Account F with (nolock) where F.CurrentAccountName=isnull(VI.UD_Firma3,\'\') and CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\')=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\'");
+                sb.AppendLine("or (select F.RecId from FI_Account F with (nolock) where F.CurrentAccountName=isnull(VI.UD_Firma4,\'\') and CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\')=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\')");
+                sb.AppendLine("and (isnull(VI.UD_Kumas1,\'\')=\'"+inv_code_.ToString()+"\' ");
+                sb.AppendLine("or isnull(VI.UD_Kumas2,\'\')=\'"+inv_code_.ToString()+"\' ");
+                sb.AppendLine("or isnull(VI.UD_Kumas3,\'\')=\'"+inv_code_.ToString()+"\'");
+                sb.AppendLine("or isnull(VI.UD_Kumas4,\'\')=\'"+inv_code_.ToString()+"\')");    
+              // MessageBox.Show(sb.ToString());
+                
+                dt_sb = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb",sb.ToString());
+                
+                if(dt_sb != null &amp;&amp; dt_sb.Rows.Count &gt; 0)
+                    {
+                        okeylenen_renk_ = dt_sb.Rows[0]["okeylenen_renk"].ToString();
+                        //woi.SetField&lt;|string|&gt;("UD_OkeylenenDip",okeylenen_renk_.ToString());
+                       // MessageBox.Show(okeylenen_renk_.ToString());
+					   if(renk_.ToString().Trim() == woi["OperationCode"].ToString().Trim())
+                        {
+							update_row ="update MA_WorkOrderItem set UD_OkeylenenDip=\'"+okeylenen_renk_.ToString()+"\' where OperationCode=\'"+woi["OperationCode"].ToString()+"\' and  RecId=\'"+woi["RecId"].ToString()+"\'";
+                        //	MessageBox.Show(update_row.ToString());
+                         	UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,update_row.ToString());   
+						}
+                    }   
+			
+            }
+				    update_header ="update MA_RecipeItem set UD_Boyahanerenk=\'"+okeylenen_renk_.ToString()+"\' where RecId=\'"+ri["RecId"].ToString()+"\' and  WorkOrderReceiptId=\'"+BaseObject.CurrentRow.Row["RecId"].ToString()+"\'";
+           //  MessageBox.Show(update_header.ToString());
+          UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,update_header.ToString());    
+      }
+
+        
+      
+}
+
+</ScriptText>
+</ScriptDefinition>

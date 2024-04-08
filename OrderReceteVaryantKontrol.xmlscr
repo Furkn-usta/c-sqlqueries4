@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderReceteVaryantKontrol" Enabled="false" Priority="0" ScriptName="OrderReceteVaryantKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 1.04.2024 13:38:27 OrderReceteVaryantKontrol
+/*
+Order Reçetesinde Variant1 üzerinde F9 ile seçim yapılmadığı sürece kayıdı engelleyecektir.
+*/
+	
+function OnBeforePost(sender,ev)
+{
+    if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null )
+        return null;
+
+
+   	foreach(ri in BaseObject.Data.Tables["MA_RecipeItem"].Select("ItemType = 1")) 
+                {
+                    if(ri.IsNull("Variant1"))
+                        vary_ = "";
+                    else
+                        vary_ =  ri["Variant1"].ToString();
+                 query = "select count(VI.RecId) [rec] from IM_VariantItem VI with (nolock) where VI.CompanyId=\'"+BaseObject.ActiveSession.Company.RecId+"\' and VI.ItemCode=\'"+vary_.ToString()+"\'";
+               //  MessageBox.Show(query);
+                 dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+                 if(dt !=null &amp;&amp; dt.Rows.Count&gt;0)
+                    {
+                    if(Convert.ToInt32(dt.Rows[0]["rec"]) == 0)
+	                    {
+	                        sender.ShowMessage("F9 İle Renk Kartları Üzerinden Seçim Yapmalısınız.");
+	                        ev.Cancel=true;
+	                        return null;
+	                    }
+                    }
+                }
+}</ScriptText>
+</ScriptDefinition>

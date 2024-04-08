@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Pastal Planlama" Enabled="true" Priority="0" ScriptName="PastalPlanlama">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderCuttingProductionEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderCuttingProductionEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderCuttingProductionEN" />
+  </Events>
+  <Histories>
+    <History EditedBy="Murat Y." EntryDate="2021-11-24T00:00:00">
+      <Change>Sorgulardaki hata giderilip sorunsuz çalışması sağlandı.</Change>
+    </History>
+    <History EditedBy="Murat Y." EntryDate="2021-12-03T00:00:00">
+      <Change />
+    </History>
+    <History EditedBy="Murat Y." EntryDate="2021-12-14T00:00:00">
+      <Change>Kumaş'a göre kümüle edilip tedarik ekranına yansıyan değerlere ek olarak varyant filtresi eklenmiştir.</Change>
+    </History>
+  </Histories>
+  <ScriptText>/*
+03.12.2021 - Pastal &amp; Tedarik Hesaplama
+HC Organize - Pastal Planlama - Emre Bey
+
+Pastal planlanma ekranında girilen en, boy, metrekare, miktar, fire, kat ve işçi sayısı ile satır ihtiyaç ve gerçek birim metraj'ı hesaplar. Pastal planlama girişinde kayıt yapıldığında aynı zamanda kumaş tedariği de satır ihtiyaç baz alınarak oluşturulur/güncellenir.
+*/
+
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+		return null;
+	
+	if(BaseObject.CurrentRow.Row.IsNull("Quantity") || BaseObject.CurrentRow.Row.IsNull("WorkOrderItemId") || BaseObject.CurrentRow.Row.IsNull("SubNo") || BaseObject.CurrentRow.Row.IsNull("InventoryId") ||  Convert.ToDecimal(BaseObject.CurrentRow.Row["Quantity"]) &lt;= 0)
+		return null;
+		
+	rows = BaseObject.Data.Tables["MA_WorkOrderProductionDetail"].Select("ISNULL(ProductCount,0) &lt;&gt; 0 AND ISNULL(MarkerLength,0) &lt;&gt; 0 AND ISNULL(MarkerWidth,0) &lt;&gt; 0 AND ISNULL(M2Weight,0) &lt;&gt; 0");
+	
+	if(rows == null || rows.Length &lt;= 0)
+		return null;
+		
+	Qty = Convert.ToDecimal(BaseObject.CurrentRow.Row["Quantity"]);
+	pBoy = Convert.ToDecimal(rows[0]["MarkerLength"]) / 100 / Qty;
+	pEn = Convert.ToDecimal(rows[0]["MarkerWidth"]) / 100;
+	m2W = Convert.ToDecimal(rows[0]["M2Weight"]) / 1000;
+	pWst = 0m;
+	pBF = 0m;
+	
+	if(!rows[0].IsNull("Wastage"))
+		pWst = Convert.ToDecimal(rows[0]["Wastage"]) / 100;
+		
+	if(!rows[0].IsNull("UD_BoyaFire"))
+		pBF = Convert.ToDecimal(rows[0]["UD_BoyaFire"]) / 100;
+
+	gbm = ((pBoy + (pBoy * pWst)) * pEn) * m2W;
+	SatirIhtiyac = gbm * Convert.ToDecimal(rows[0]["ProductCount"]);
+
+	BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_GercekBirimMetraj", gbm);
+	BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_SatirIhtiyac", SatirIhtiyac);
+}
+
+queryDump = new StringBuilder();
+	
+function addtostr(str)
+{
+//	return null;
+	
+	global:queryDump.AppendLine(str);
+	if(BaseObject.ActiveSession.User.RecId == 1)
+		Clipboard.SetText(global:queryDump.ToString());
+
+}
+
+function OnAfterSucceededPost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+		return null;
+		
+	if(BaseObject.CurrentRow.Row.IsNull("InventoryId") || BaseObject.CurrentRow.Row.IsNull("WorkOrderItemId") || BaseObject.CurrentRow.Row.IsNull("SubNo"))
+		return null;
+	
+	
+	v1q = "SELECT ItemCode FROM IM_VariantItem WHERE RecId = (select VariantItemId from IM_ItemColor WHERE RecipeItemId = (SELECT RecId FROM MA_RecipeItem where WorkOrderReceiptId= (SELECT WorkOrderId FROM MA_WorkOrderItem WHERE RecId = " + BaseObject.CurrentRow.Row["WorkOrderItemId"].ToString() + ") AND ItemType = 1 AND ItemNo = "+BaseObject.CurrentRow.Row["RecipeItemNo"].ToString()+"))";
+	addtostr(v1q);
+	v1r = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "v1r", v1q);
+
+	variant1 = "";
+	if(v1r != null &amp;&amp; v1r.Rows.Count &gt; 0)
+	{		
+		if(!string.IsNullOrWhiteSpace(v1r.Rows[0]["ItemCode"]))
+			variant1 = v1r.Rows[0]["ItemCode"].ToString();
+	}
+		
+	wopq = "SELECT * FROM MA_WorkOrderProduction WHERE WorkOrderItemId=" + BaseObject.CurrentRow.Row["WorkOrderItemId"].ToString() + " AND InventoryId=" + BaseObject.CurrentRow.Row["InventoryId"].ToString();
+		addtostr(wopq);	 
+	wopr = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "wopr", wopq);
+	
+	if(wopr == null || wopr.Rows.Count &lt;= 0)
+		return null; 
+	
+	totalSatirIhtiyac = 0m;
+	totalWastage = 0m;
+	totalWastageWBF = 0m;
+	
+	foreach( wop in wopr.Rows )
+	{ 
+		v1q2 = "SELECT ItemCode FROM IM_VariantItem WHERE RecId = (select VariantItemId from IM_ItemColor WHERE RecipeItemId = (SELECT RecId FROM MA_RecipeItem where WorkOrderReceiptId= (SELECT WorkOrderId FROM MA_WorkOrderItem WHERE RecId = " + BaseObject.CurrentRow.Row["WorkOrderItemId"].ToString()  + ") AND ItemType = 1 AND ItemNo = "+wop["RecipeItemNo"].ToString()+"))";
+			addtostr(v1q2);	 
+		v1r2 = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "v1r2", v1q2);
+        variant12 = "";
+        if(v1r2 != null &amp;&amp; v1r2.Rows.Count &gt; 0 &amp;&amp; !string.IsNullOrWhiteSpace(v1r2.Rows[0]["ItemCode"]) &amp;&amp; variant1 != v1r2.Rows[0]["ItemCode"].ToString())
+        {
+            //return null;
+        }else{
+        
+		subq = "SELECT ISNULL(ProductCount,0) ProductCount, ISNULL(MarkerLength,0) MarkerLength, ISNULL(MarkerWidth,0) MarkerWidth, ISNULL(Wastage,0) Wastage, ISNULL(UD_BoyaFire,0) UD_BoyaFire, ISNULL(M2Weight,0) M2Weight FROM MA_WorkOrderProductionDetail WHERE WorkOrderProductionId=" + wop["RecId"].ToString();
+		addtostr(subq);	 
+		subr = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "subr", subq);
+	
+		if(subr == null || subr.Rows.Count &lt;= 0)
+			return null;
+		
+		Qty = Convert.ToDecimal(wop["Quantity"]);
+		pBoy = Convert.ToDecimal(subr.Rows[0]["MarkerLength"]) / 100 / Qty;
+		pEn = Convert.ToDecimal(subr.Rows[0]["MarkerWidth"]) / 100;
+		pWst = Convert.ToDecimal(subr.Rows[0]["Wastage"]) / 100;
+		m2W = Convert.ToDecimal(subr.Rows[0]["M2Weight"]) / 1000;
+		pBF = Convert.ToDecimal(subr.Rows[0]["UD_BoyaFire"]) / 100;
+		
+		gbm = ((pBoy + (pBoy * pWst)) * pEn) * m2W; 
+
+		totalSatirIhtiyac += gbm * Convert.ToDecimal(subr.Rows[0]["ProductCount"]);
+		totalWastage += (pBoy * pWst) * Convert.ToDecimal(subr.Rows[0]["ProductCount"]);
+		totalWastageWBF += (gbm * pBF) * Convert.ToDecimal(subr.Rows[0]["ProductCount"]);
+		}
+	}
+		
+	q="SELECT RecId FROM MA_Requirement WHERE WorkOrderItemId = " + BaseObject.CurrentRow.Row["WorkOrderItemId"].ToString() + " AND InventoryId=" + BaseObject.CurrentRow.Row["InventoryId"].ToString() + " AND Variant1=\'" + variant1 + "\'";	
+			addtostr(q);	
+	r=UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "r", q);
+		
+	optq = "SELECT OperationType FROM MA_RecipeItem WHERE WorkOrderReceiptId = (SELECT WorkOrderId FROM MA_WorkOrderItem WHERE RecId = " + BaseObject.CurrentRow.Row["WorkOrderItemId"].ToString() + ") AND ItemType = 1  AND ItemNo = " + BaseObject.CurrentRow.Row["RecipeItemNo"].ToString();
+			addtostr(optq);	
+	optr = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "optr", optq);
+ 
+
+	operationType = "0";
+	if(optr != null &amp;&amp; optr.Rows.Count &gt; 0 &amp;&amp; !optr.Rows[0].IsNull("OperationType"))
+		operationType =  optr.Rows[0]["OperationType"].ToString();
+	
+	csq = "";
+		
+	if(r == null || r.Rows.Count &lt;= 0)
+		csq = "INSERT INTO MA_Requirement (RequirementType, RequirementGroup, WorkOrderItemId, InventoryId, Variant1, Variant2, OperationType, Quantity, WastageQty, DyeWastageQty, RecipeItemNo, InsertedAt, InsertedBy) VALUES (1, \'\', "+BaseObject.CurrentRow.Row["WorkOrderItemId"].ToString()+", "+BaseObject.CurrentRow.Row["InventoryId"].ToString()+", \'"+variant1+"\', \'\', "+operationType+", "+totalSatirIhtiyac.ToString(System.Globalization.CultureInfo.InvariantCulture)+", "+totalWastage.ToString(System.Globalization.CultureInfo.InvariantCulture)+", "+totalWastageWBF.ToString(System.Globalization.CultureInfo.InvariantCulture) + ", " + BaseObject.CurrentRow.Row["RecipeItemNo"].ToString() +", GETDATE(), "+BaseObject.ActiveSession.User.RecId.ToString()+")";
+	else
+		csq = "UPDATE MA_Requirement SET Quantity = "+totalSatirIhtiyac.ToString(System.Globalization.CultureInfo.InvariantCulture)+", WastageQty = "+totalWastage.ToString(System.Globalization.CultureInfo.InvariantCulture)+", DyeWastageQty= "+totalWastageWBF.ToString(System.Globalization.CultureInfo.InvariantCulture)+", UpdatedAt = GETDATE(), UpdatedBy= "+BaseObject.ActiveSession.User.RecId.ToString() + " WHERE RecId = " + r.Rows[0]["RecId"].ToString();
+		addtostr(csq);
+	UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection, null, csq);
+}</ScriptText>
+</ScriptDefinition>

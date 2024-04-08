@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ÖnMaliyetZorunluSeçim" Enabled="false" Priority="0" ScriptName="ÖnMaliyetZorunluSecim">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>function OnBeforePost(sender ,eventArg){
+    if(BaseObject.Name=="TWorkOrderEN"){
+	    if(BaseObject!=null &amp;&amp; BaseObject.CurrentRow!=null &amp;&amp; BaseObject.CurrentRow.Row!=null &amp;&amp; BaseObject.CurrentRow.Row.IsNull("InitialCostId") &amp;&amp; BaseObject.CurrentRow.Row["InitialCostId"].ToString()==""  ){
+	        dt= new DateTime(2020,11,18);
+	        if(Convert.ToDateTime(BaseObject.CurrentRow.Row["WorkOrderDate"])&gt;dt){
+		        sender.ShowMessage("Order Girişinde Ön Maliyet Seçilmemiş Lütfen Kontrol Ediniz.! {scr:ÖnMaliyetZorunluSeçim}");
+				eventArg.Cancel=true;
+			    return null;
+		    }
+        }
+    }
+}</ScriptText>
+</ScriptDefinition>

@@ -1,0 +1,237 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ÖnMaliyetFiyatKontrol" Enabled="true" Priority="0" ScriptName="ÖnMaliitetFiyatKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" ObjectName="InvoiceEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InvoiceEN" />
+    <Event Enabled="true" ObjectName="TWorkOrderCuttinProductionEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderCuttingProductionEN" />
+    <Event Enabled="true" ObjectName="TWorkOrderProductionEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderProductionEN" />
+  </Events>
+  <Histories />
+  <ScriptText>function OnBeforePost (sender ,eventArg)
+{
+    if(BaseObject.Name=="OrderReceiptEN"
+       &amp;&amp; BaseObject!=null 
+	   &amp;&amp; BaseObject.CurrentRow!=null 
+	   &amp;&amp; BaseObject.CurrentRow.Row!=null 
+	   &amp;&amp; BaseObject.CurrentRow.Row.RowState != DataRowState.Deleted
+	   &amp;&amp; BaseObject.CurrentRow.Row.RowState != DataRowState.Detached
+	   &amp;&amp; !BaseObject.CurrentRow.Row.IsNull("ReceiptType")  
+	   &amp;&amp; (Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"])== 1 || Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"])==3 ))
+    {
+	    foreach(dr in BaseObject.Data.Tables["IM_OrderReceiptItem"].Select("InventoryId is not null and isnull(UnitPrice,0)&gt;0 "))
+	    {
+	        if(dr.RowState!=DataRowState.Deleted &amp;&amp; dr.RowState!=DataRowState.Detached)
+	        {
+	            l_row_unit_price = Convert.ToDecimal(dr["UnitPrice"]);
+	            l_row_forex_id = 0;
+  		        if(!dr.IsNull("ForexId") &amp;&amp; Convert.ToInt32(dr["ForexId"])&gt;0)
+  		            l_row_forex_id = Convert.ToInt32(dr["ForexId"]);
+  		        l_row_forex_unit_price = 0m;
+		  		if(!dr.IsNull("ForexUnitPrice") &amp;&amp; Convert.ToDecimal(dr["ForexUnitPrice"])&gt;0m)
+		  		    l_row_forex_unit_price = Convert.ToDecimal(dr["ForexUnitPrice"]);
+
+	            foreach(ddr in BaseObject.Data.Tables["IM_ItemAllocation"].Select("InventoryId is not null and WorkOrderItemId is not null and OrderReceiptItemId = "+dr["RecId"].ToString()))
+				{
+					l_str = " select "; 
+					l_str += " isnull(ic.UnitPrice,0) UnitPrice ,isnull(ic.ForexUnitPrice,0) ForexUnitPrice,isnull(ic.ForexId,0) ForexId ";
+					l_str += " from  MA_WorkOrder w with (nolock) ";
+					l_str += " left join MA_WorkOrderItem wi with (nolock) on w.RecId = wi.WorkOrderId and wi.WorkOrderSubType=1 ";
+					l_str += " left join MA_InitialCostItem ic with (nolock) on ic.InitialCostId = w.InitialCostId ";
+					l_str += " where (ic.UnitPrice&gt;0 or ic.ForexUnitPrice&gt;0) and ic.InventoryId="+dr["InventoryId"].ToString()+" and wi.RecId = "+ddr["WorkOrderItemId"].ToString();
+	  		        dt= UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", l_str);
+	  		        if(dt!=null &amp;&amp; dt.Rows.Count&gt;0)
+	  		        {
+	  		        	l_cost_unit_price = 0m;0m;
+		  		        if(!dt.Rows[0].IsNull("UnitPrice") &amp;&amp; Convert.ToDecimal(dt.Rows[0]["UnitPrice"])&gt;0m)
+		  		             l_cost_unit_price = Convert.ToDecimal(dt.Rows[0]["UnitPrice"]);
+		  		        
+		  		        l_cost_forex_id = 0;
+		  		        if(!dt.Rows[0].IsNull("ForexId") &amp;&amp; Convert.ToInt32(dt.Rows[0]["ForexId"])&gt;0)
+		  		             l_cost_forex_id = Convert.ToInt32(dt.Rows[0]["ForexId"]);
+		  		        
+		  		        l_cost_forex_unit_price = 0m;
+		  		        if(!dt.Rows[0].IsNull("ForexUnitPrice") &amp;&amp; Convert.ToDecimal(dt.Rows[0]["ForexUnitPrice"])&gt;0m)
+		  		             l_cost_forex_unit_price = Convert.ToDecimal(dt.Rows[0]["ForexUnitPrice"]);
+                    
+
+
+		  		        if(l_cost_forex_id&gt;0 &amp;&amp; l_row_forex_id ==0 )
+		  		        {
+		  	                BaseObject.ShowMessage(dr["ItemOrderNo"].ToString()+ ". satırına bağlı Order\'ın Ön Maliyetinde malzemede döviz seçili ancak sipariş satırında döviz yok!Lütfen kontrol ediniz.{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+		     	            eventArg.Cancel=true;
+		      	            return null;
+		  	            }
+		  	            /*else if(l_cost_forex_id != l_row_forex_id)
+		  	            {
+		  	                BaseObject.ShowMessage(dr["ItemOrderNo"].ToString()+ ". satırın Ön Maliyet Dövizi ile Satırın dövizi uyumsuz!Lütfen kontrol ediniz.{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+		     	            eventArg.Cancel=true;
+		      	            return null;
+		  	            }*/
+		  	            else if(l_cost_forex_id&gt;0 &amp;&amp; l_row_forex_id&gt;0  &amp;&amp;  l_cost_forex_id == l_row_forex_id &amp;&amp;  l_row_forex_unit_price &gt; l_cost_forex_unit_price)
+		  	            {
+		  	                BaseObject.ShowMessage(dr["ItemOrderNo"].ToString()+". satırın döviz birim fiyatı Ön Maliyet döviz birim fiyatından büyük.Lütfen kontrol ediniz!{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+		     	            eventArg.Cancel=true;
+		      	            return null;
+		  	            }
+			            else if(l_cost_forex_id == 0  &amp;&amp; l_row_unit_price &gt; l_cost_unit_price) 
+			            {
+		  	                BaseObject.ShowMessage(dr["ItemOrderNo"].ToString()+ ". satırın birim fiyatı Ön Maliyet birim fiyatından büyük.Lütfen kontrol ediniz!{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+		     	            eventArg.Cancel=true;
+		      	            return null;
+		  	            }         
+	  	            }
+		        }  
+	        } 
+        }
+    }
+    else if((BaseObject.Name=="InventoryReceiptEN" || BaseObject.Name=="InvoiceEN")
+       &amp;&amp; BaseObject!=null 
+	   &amp;&amp; BaseObject.CurrentRow!=null 
+	   &amp;&amp; BaseObject.CurrentRow.Row!=null 
+	   &amp;&amp; BaseObject.CurrentRow.Row.RowState != DataRowState.Deleted
+	   &amp;&amp; BaseObject.CurrentRow.Row.RowState != DataRowState.Detached
+	   &amp;&amp; !BaseObject.CurrentRow.Row.IsNull("ReceiptType")  
+	   &amp;&amp; (Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"])== 1 || Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"])==11 || Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"])==16 || Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"])==134 || Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"])==122 || Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"])==12 ))
+    {
+	    foreach(dr in BaseObject.Data.Tables["IM_ReceiptItem"].Select("InventoryId is not null and isnull(UnitPrice,0)&gt;0 "))
+	    {
+	        if(dr.RowState!=DataRowState.Deleted &amp;&amp; dr.RowState!=DataRowState.Detached)
+	        {
+	            l_row_unit_price = Convert.ToDecimal(dr["UnitPrice"]);
+	            l_row_forex_id = 0;
+  		        if(!dr.IsNull("ForexId") &amp;&amp; Convert.ToInt32(dr["ForexId"])&gt;0)
+  		            l_row_forex_id = Convert.ToInt32(dr["ForexId"]);
+  		        l_row_forex_unit_price = 0m;
+		  		if(!dr.IsNull("ForexUnitPrice") &amp;&amp; Convert.ToDecimal(dr["ForexUnitPrice"])&gt;0m)
+		  		    l_row_forex_unit_price = Convert.ToDecimal(dr["ForexUnitPrice"]);
+
+	            foreach(ddr in BaseObject.Data.Tables["IM_ItemAllocation"].Select("InventoryId is not null and WorkOrderItemId is not null and InventoryReceiptItemId = "+dr["RecId"].ToString()))
+				{
+					l_str = " select "; 
+					l_str += " isnull(ic.UnitPrice,0) UnitPrice ,isnull(ic.ForexUnitPrice,0) ForexUnitPrice,isnull(ic.ForexId,0) ForexId ";
+					l_str += " from  MA_WorkOrder w with (nolock) ";
+					l_str += " left join MA_WorkOrderItem wi with (nolock) on w.RecId = wi.WorkOrderId and wi.WorkOrderSubType=1 ";
+					l_str += " left join MA_InitialCostItem ic with (nolock) on ic.InitialCostId = w.InitialCostId ";
+					l_str += " where (ic.UnitPrice&gt;0 or ic.ForexUnitPrice&gt;0) and ic.InventoryId="+dr["InventoryId"].ToString()+" and wi.RecId = "+ddr["WorkOrderItemId"].ToString();
+	  		        dt= UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", l_str);
+	  		        if(dt!=null &amp;&amp; dt.Rows.Count&gt;0)
+	  		        {
+	  		        	l_cost_unit_price = 0m;0m;
+		  		        if(!dt.Rows[0].IsNull("UnitPrice") &amp;&amp; Convert.ToDecimal(dt.Rows[0]["UnitPrice"])&gt;0m)
+		  		             l_cost_unit_price = Convert.ToDecimal(dt.Rows[0]["UnitPrice"]);
+		  		        
+		  		        l_cost_forex_id = 0;
+		  		        if(!dt.Rows[0].IsNull("ForexId") &amp;&amp; Convert.ToInt32(dt.Rows[0]["ForexId"])&gt;0)
+		  		             l_cost_forex_id = Convert.ToInt32(dt.Rows[0]["ForexId"]);
+		  		        
+		  		        l_cost_forex_unit_price = 0m;
+		  		        if(!dt.Rows[0].IsNull("ForexUnitPrice") &amp;&amp; Convert.ToDecimal(dt.Rows[0]["ForexUnitPrice"])&gt;0m)
+		  		             l_cost_forex_unit_price = Convert.ToDecimal(dt.Rows[0]["ForexUnitPrice"]);
+                    
+
+
+		  		        if(l_cost_forex_id&gt;0 &amp;&amp; l_row_forex_id ==0 )
+		  		        {
+		  	                BaseObject.ShowMessage(dr["ItemOrderNo"].ToString()+ ". satırına bağlı Order\'ın Ön Maliyetinde malzemede döviz seçili ancak irsaliye satırında döviz yok!Lütfen kontrol ediniz.{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+		     	            eventArg.Cancel=true;
+		      	            return null;
+		  	            }
+		  	            /*else if(l_cost_forex_id != l_row_forex_id)
+		  	            {
+		  	                BaseObject.ShowMessage(dr["ItemOrderNo"].ToString()+ ". satırın Ön Maliyet Dövizi ile Satırın dövizi uyumsuz!Lütfen kontrol ediniz.{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+		     	            eventArg.Cancel=true;
+		      	            return null;
+		  	            }*/
+		  	            else if(l_cost_forex_id&gt;0 &amp;&amp; l_row_forex_id&gt;0  &amp;&amp;  l_cost_forex_id == l_row_forex_id &amp;&amp;  l_row_forex_unit_price &gt; l_cost_forex_unit_price)
+		  	            {
+		  	                BaseObject.ShowMessage(dr["ItemOrderNo"].ToString()+". satırın döviz birim fiyatı Ön Maliyet döviz birim fiyatından büyük.Lütfen kontrol ediniz!{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+		     	            eventArg.Cancel=true;
+		      	            return null;
+		  	            }
+			            else if(l_cost_forex_id == 0  &amp;&amp; l_row_unit_price &gt; l_cost_unit_price) 
+			            {
+		  	                BaseObject.ShowMessage(dr["ItemOrderNo"].ToString()+ ". satırın birim fiyatı Ön Maliyet birim fiyatından büyük.Lütfen kontrol ediniz!{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+		     	            eventArg.Cancel=true;
+		      	            return null;
+		  	            }         
+	  	            }
+		        }  
+	        } 
+        }
+    }
+    else if((BaseObject.Name=="TWorkOrderCuttingProductionEN" || BaseObject.Name=="TWorkOrderProductionEN")
+       &amp;&amp; BaseObject!=null 
+	   &amp;&amp; BaseObject.CurrentRow!=null 
+	   &amp;&amp; BaseObject.CurrentRow.Row!=null 
+	   &amp;&amp; BaseObject.CurrentRow.Row.RowState != DataRowState.Deleted
+	   &amp;&amp; BaseObject.CurrentRow.Row.RowState != DataRowState.Detached
+	   &amp;&amp; !BaseObject.CurrentRow.Row.IsNull("ProcessId")
+	   &amp;&amp; !BaseObject.CurrentRow.Row.IsNull("WorkOrderItemId")
+	   &amp;&amp; !BaseObject.CurrentRow.Row.IsNull("InOut")
+	   &amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["InOut"])==1)
+    {
+         l_row_unit_price = 0m;
+         if(!BaseObject.CurrentRow.Row.IsNull("UnitPrice") &amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["UnitPrice"])&gt;0m)
+	         l_row_unit_price = Convert.ToDecimal(BaseObject.CurrentRow.Row["UnitPrice"]);
+         l_row_forex_id = 0;
+  		 if(!BaseObject.CurrentRow.Row.IsNull("ForexId") &amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["ForexId"])&gt;0)
+  		     l_row_forex_id = Convert.ToInt32(BaseObject.CurrentRow.Row["ForexId"]);
+  		 l_row_forex_unit_price = 0m;
+	  	 if(!BaseObject.CurrentRow.Row.IsNull("ForexUnitPrice") &amp;&amp; Convert.ToDecimal(BaseObject.CurrentRow.Row["ForexUnitPrice"])&gt;0m)
+	  		 l_row_forex_unit_price = Convert.ToDecimal(BaseObject.CurrentRow.Row["ForexUnitPrice"]);
+
+	     l_str = " select "; 
+		 l_str += " isnull(ic.UnitPrice,0) UnitPrice ,isnull(ic.ForexUnitPrice,0) ForexUnitPrice,isnull(ic.ForexId,0) ForexId ";
+		 l_str += " from  MA_WorkOrder w with (nolock) ";
+	 	 l_str += " left join MA_WorkOrderItem wi with (nolock) on w.RecId = wi.WorkOrderId and wi.WorkOrderSubType=1 ";
+		 l_str += " left join MA_InitialCostItem ic with (nolock) on ic.InitialCostId = w.InitialCostId ";
+		 l_str += " where (ic.UnitPrice&gt;0 or ic.ForexUnitPrice&gt;0) and ic.InitialCostCardId = (select top 1 RecId from MA_InitialCostCard with (nolock) where ProcessId="+BaseObject.CurrentRow.Row["ProcessId"].ToString()+") and wi.RecId = "+BaseObject.CurrentRow.Row["WorkOrderItemId"].ToString();
+  		 dt= UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", l_str);
+	  	 if(dt!=null &amp;&amp; dt.Rows.Count&gt;0)
+	  	 {
+  		     l_cost_unit_price = 0m;0m;
+  		     if(!dt.Rows[0].IsNull("UnitPrice") &amp;&amp; Convert.ToDecimal(dt.Rows[0]["UnitPrice"])&gt;0m)
+  		         l_cost_unit_price = Convert.ToDecimal(dt.Rows[0]["UnitPrice"]);
+  		        
+  		     l_cost_forex_id = 0;
+  		     if(!dt.Rows[0].IsNull("ForexId") &amp;&amp; Convert.ToInt32(dt.Rows[0]["ForexId"])&gt;0)
+  		         l_cost_forex_id = Convert.ToInt32(dt.Rows[0]["ForexId"]);
+  		        
+  		     l_cost_forex_unit_price = 0m;
+  		     if(!dt.Rows[0].IsNull("ForexUnitPrice") &amp;&amp; Convert.ToDecimal(dt.Rows[0]["ForexUnitPrice"])&gt;0m)
+  		         l_cost_forex_unit_price = Convert.ToDecimal(dt.Rows[0]["ForexUnitPrice"]);
+             
+             if(l_cost_forex_id&gt;0 &amp;&amp; l_row_forex_id ==0 )
+  		     {
+  	            BaseObject.ShowMessage("Order\'ın Ön Maliyet işleminde döviz seçili ancak üretim girişleri satırında döviz yok!Lütfen kontrol ediniz.{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+ 	            eventArg.Cancel=true;
+  	            return null;
+  	        }
+  	        /*else if(l_cost_forex_id != l_row_forex_id)
+  	        {
+  	            BaseObject.ShowMessage("Ön Maliyet Dövizi ile üretim girişi dövizi uyumsuz!Lütfen kontrol ediniz.{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+ 	            eventArg.Cancel=true;
+  	            return null;
+  	        }*/
+  	        else if(l_cost_forex_id&gt;0 &amp;&amp; l_row_forex_id&gt;0  &amp;&amp;  l_cost_forex_id == l_row_forex_id &amp;&amp;  l_row_forex_unit_price &gt; l_cost_forex_unit_price)
+  	        {
+  	            BaseObject.ShowMessage("Döviz birim fiyatı Ön Maliyet döviz birim fiyatından büyük satır veya satırlar mevcut.Lütfen kontrol ediniz!{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+ 	            eventArg.Cancel=true;
+  	            return null;
+  	        }
+	        else if(l_cost_forex_id == 0  &amp;&amp; l_row_unit_price &gt; l_cost_unit_price) 
+	        {
+  	            BaseObject.ShowMessage("Birim fiyatı Ön Maliyet birim fiyatından büyük satır veya satırlar mevcut.Lütfen kontrol ediniz!{SCR:ÖnMaliyetFiyatKontrol}","Dikkat!");
+ 	            eventArg.Cancel=true;
+  	            return null;
+		  	}  
+        }
+    }
+}</ScriptText>
+</ScriptDefinition>

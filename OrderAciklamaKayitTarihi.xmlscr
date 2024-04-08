@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderAciklamaKayitTarihi" Enabled="true" Priority="0" ScriptName="OrderAciklamaKayitTarihi">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 25.03.2024 16:00:26 OrderAciklamaKayitTarihi
+function OnAfterSucceededPost(sender, ev)
+{
+	if( BaseObject == null 
+	|| BaseObject.CurrentRow == null 
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("RecId"))
+		return null;
+
+			rec_Id = BaseObject.CurrentRow.Row["RecId"].ToString();
+			update_sorgu ="update MA_WorkOrder set UD_POT=WOE.InsertedAt";
+			update_sorgu +=" from MA_WorkOrder WO with (nolock)";
+			update_sorgu +=" left join MA_WorkOrderExplanation WOE with (nolock) on WOE.WorkOrderId=WO.RecId";
+			update_sorgu +=" where WO.RecId=\'"+rec_Id.ToString()+"\' and WOE.ExplanationType=1";
+             // MessageBox.Show(update_sorgu.ToString());
+            UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,update_sorgu.ToString()); 
+}</ScriptText>
+</ScriptDefinition>

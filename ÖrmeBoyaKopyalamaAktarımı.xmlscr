@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ÖrmeBoyaKopyalamaAktarımı" Enabled="true" Priority="0" ScriptName="ÖrmeBoyaKopyalamaAktarımı">
+  <Events>
+    <Event Enabled="true" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="OrderReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 5.05.2023 09:59:37
+/*
+Boya seçilerek kopyalanan sipariş fişlerinde hesaplanan miktar kopyalanan boya fişinin miktar alanına taşınmaktadır.
+*/
+function OnBeforePost (sender,eventArg)
+{
+	if(BaseObject == null 
+	|| BaseObject.CurrentRow == null 
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("ReceiptType") 
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) != 3
+	|| BaseObject.CurrentRow.Row.IsNull("ReceiptSubType"))
+		return null;
+		/*
+		MessageBox.Show(BaseObject.CurrentRow.Row["ReceiptSubType"].ToString());
+		MessageBox.Show(BaseObject.IsCopyEntity.ToString());
+		*/
+		copy_status = BaseObject.IsCopyEntity.ToString().Trim();
+		sub_type = BaseObject.CurrentRow.Row["ReceiptSubType"].ToString().Trim();
+			if(sub_type == 2 &amp;&amp; copy_status == "True")
+				{
+				foreach (dr in BaseObject.Data.Tables["IM_OrderReceiptItem"].Select(""))
+					{
+					qunt = Convert.ToDecimal(dr["Quantity"]);
+					vatr = Convert.ToDecimal(dr["VatRate"]);
+					calc_quant = qunt/(100-vatr)*100;
+					dr.SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(calc_quant));
+					}
+				}
+}</ScriptText>
+</ScriptDefinition>

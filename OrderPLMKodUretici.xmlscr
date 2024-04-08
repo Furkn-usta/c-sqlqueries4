@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderPLMKodUretici" Enabled="true" Priority="0" ScriptName="OrderPLMKodUretici">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 19.12.2023 10:33:53 OrderPLMKodUretici
+function OnAfterSucceededPost(sender, ev)
+{
+   	if(BaseObject == null 
+	    || BaseObject.CurrentRow == null
+	    || BaseObject.CurrentRow.Row == null
+		|| BaseObject.CurrentRow.Row.IsNull("IsSample")
+		|| BaseObject.CurrentRow.Row.IsNull("RecId"))
+			return null;
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) == 1 &amp;&amp; !BaseObject.CurrentRow.Row.IsNull("UD_PLMCounter"))
+		{	
+			if(BaseObject.ActiveSession.User.RecId == 155 &amp;&amp; BaseObject.ActiveSession.Company.RecId == 14)		
+			{
+			code_ = "CC23-";
+                counter_ = Convert.ToInt32(BaseObject.CurrentRow.Row["UD_PLMCounter"]);
+                counter_length_ = counter_.ToString().Length;
+                //MessageBox.Show(counter_length_.ToString());
+                if(Convert.ToInt32(counter_length_) == 1)
+                {
+                code_ += "000"+counter_.ToString();
+                }
+                else if(Convert.ToInt32(counter_length_) == 2)
+                {
+                code_ += "00"+counter_.ToString();
+                }
+                else if(Convert.ToInt32(counter_length_) == 3)
+                {
+                code_ += "0"+counter_.ToString();
+                }
+                else if(Convert.ToInt32(counter_length_) == 4)
+                {
+                code_ += counter_.ToString();
+                }
+                
+               UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection, null, "update MA_WorkOrder set WorkOrderNo=\'"+code_.ToString()+"\' where IsSample=1 and RecId=\'"+BaseObject.CurrentRow.Row["RecId"].ToString()+"\'");
+            }
+        }
+           
+}</ScriptText>
+</ScriptDefinition>

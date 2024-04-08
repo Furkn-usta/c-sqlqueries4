@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OlusturmaEngel" Enabled="true" Priority="0" ScriptName="OlusturmaEngel">
+  <Events>
+    <Event Enabled="true" ObjectName="InvoiceVM" />
+    <Event Enabled="true" EventName="BeforeCommandExecution" FunctionName="OnBeforeCommandExecution" ObjectName="InvoiceVM" />
+    <Event Enabled="true" ObjectName="InventoryReceiptVM" />
+    <Event Enabled="true" EventName="BeforeCommandExecution" FunctionName="OnBeforeCommandExecution" ObjectName="InventoryReceiptVM" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 4.03.2024 16:12:40 OlusturmaEngel
+function OnBeforeCommandExecution(sender, cmd)
+{
+/*
+		if(BaseObject != null 
+            &amp;&amp; BaseObject.ActiveEntity != null 
+            &amp;&amp; BaseObject.ActiveEntity.CurrentRow != null 
+            &amp;&amp; BaseObject.ActiveEntity.CurrentRow.Row != null)
+               return null;
+*/
+        if(BaseObject.ActiveSession.Company.CompanyId != 1)
+            return null;
+
+	cn_ = cmd.CommandName;
+	
+	if(BaseObject.ActiveEntity.Name == "InvoiceEN")
+        command_name_ = "EInvoiceCreateCommand";
+    else if(BaseObject.ActiveEntity.Name == "InventoryReceiptEN")
+        command_name_ = "EDispatchCreateCommand";
+
+if(cn_.ToString().Trim() == command_name_.ToString().Trim())
+ 	{
+		BaseObject.SysManager.ActiveWindowManager.ShowMessage("Bu Şirkette Oluştur Gönder Yetkiniz Bulunmamaktadır.", ConstantStr.Warning, Zeta.Common.InformationMessages.MessageBoxButton.OK, Zeta.Common.InformationMessages.MessageBoxImage.Exclamation);
+		cmd.Cancel = true;
+		return null;
+	}
+}</ScriptText>
+</ScriptDefinition>

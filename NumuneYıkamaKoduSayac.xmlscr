@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneYıkamaKoduSayac" Enabled="true" Priority="0" ScriptName="NumuneYıkamaKoduSayac">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChanged" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 6.03.2024 13:41:04 	NumuneYıkamaKoduSayac
+
+
+function OnColumnChanged(sender, ev)
+{
+	if( BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null 
+    || BaseObject.CurrentRow.Row.IsNull("InventoryType")
+    || BaseObject.CurrentRow.Row.IsNull("IsSample")
+    || BaseObject.CurrentRow.Row.IsNull("UD_SayacKontrol")
+    || BaseObject.CurrentRow.Row["UD_SayacKontrol"].ToString() == "True"
+    )
+		return null;
+
+      sb = new StringBuilder();
+      sb.Clear();
+    if(BaseObject.Name!="InventoryEN" 
+		|| ev.Row.Table.TableName != "IM_Item")	 
+         return null;	
+       if(ev.Row.IsNull("UD_Fabrika") || ev.Row["UD_Fabrika"].ToString().Trim() =="") 
+            return null;
+  if(ev.Column.ColumnName == "UD_Fabrika")
+  {      
+        fabrika_sayac_ = "UD_MerkezSayac";
+        zero_ = "";
+        fabrica_ = "";
+        if(ev.Row["UD_Fabrika"].ToString()=="Merkez")
+        {
+                fabrika_sayac_ = "UD_MerkezSayac";
+                fabrica_ = "M";
+        }
+
+        else if(ev.Row["UD_Fabrika"].ToString() == "Beylikdüzü")
+        {
+                fabrika_sayac_ = "UD_BeylikDuzuSayac";
+                fabrica_ = "B";
+        }
+
+        else if(ev.Row["UD_Fabrika"].ToString() == "Erzincan")
+        {
+                fabrika_sayac_ = "UD_ErzincanSayac";
+                fabrica_ = "E";
+        }
+        sb.AppendLine("select cast(isnull(max(isnull(I."+fabrika_sayac_.ToString()+",0)),0) as int) [sayac] from IM_Item I with (nolock) where isnull(I.UD_Fabrika,\'\') = \'"+ev.Row["UD_Fabrika"].ToString()+"\'");
+       // MessageBox.Show(sb.ToString());
+        dt_sb = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb",sb.ToString());
+           
+        if(dt_sb == null &amp;&amp; dt_sb.Rows.Count &lt;=0)
+            {
+                ev.Row.SetField&lt;|int|&gt;(fabrika_sayac_,1);
+            }
+         else if(dt_sb != null || dt_sb.Rows.Count &gt; 0)
+            {
+                ev.Row.SetField&lt;|int|&gt;(fabrika_sayac_,Convert.ToInt32(dt_sb.Rows[0]["sayac"])+1);
+            }
+             // MessageBox.Show(Convert.ToInt32(ev.Row[fabrika_sayac_]).ToString());
+       if(Convert.ToInt32(ev.Row[fabrika_sayac_]) &gt;0 &amp;&amp; Convert.ToInt32(ev.Row[fabrika_sayac_])&lt;10)
+            zero_ = "0000";
+        else if(Convert.ToInt32(ev.Row[fabrika_sayac_]) &gt;=10 &amp;&amp; Convert.ToInt32(ev.Row[fabrika_sayac_])&lt;100)
+            zero_ = "000";
+        else if(Convert.ToInt32(ev.Row[fabrika_sayac_]) &gt;=100 &amp;&amp; Convert.ToInt32(ev.Row[fabrika_sayac_])&lt;1000)
+            zero_ = "00";
+        else if(Convert.ToInt32(ev.Row[fabrika_sayac_]) &gt;=1000 &amp;&amp; Convert.ToInt32(ev.Row[fabrika_sayac_])&lt;10000)
+            zero_ = "0";
+        else if(Convert.ToInt32(ev.Row[fabrika_sayac_]) &gt;=10000)
+            zero_ = "";
+            
+            
+       ev.Row.SetField&lt;|string|&gt;("WashingCode",zero_+ev.Row[fabrika_sayac_].ToString()+"-"+fabrica_.ToString());   
+
+       ev.Row.SetField&lt;|int|&gt;("UD_SayacKontrol",1);    
+
+    }  
+}
+</ScriptText>
+</ScriptDefinition>

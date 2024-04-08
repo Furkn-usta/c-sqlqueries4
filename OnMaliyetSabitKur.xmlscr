@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OnMaliyetSabitKur" Enabled="true" Priority="0" ScriptName="OnMaliyetSabitKur">
+  <Events>
+    <Event Enabled="true" ObjectName="InitialCostEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InitialCostEN" />
+    <Event Enabled="true" ObjectName="InitialCostEN" />
+    <Event Enabled="true" EventName="ColumnChanging" FunctionName="OnColumnChanging" ObjectName="InitialCostEN" />
+    <Event Enabled="true" ObjectName="InitialCostEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="InitialCostEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Normal kur bilgisi için 0.00m yazilmalidir
+/*
+Kopyalama yapildiktan sonra EUR seçili olan combo alanlar 16 olmaktadir. 
+*/
+/*
+04.04.2023 Maliyet ara toplam alani kopyalama yapildiktan sonra kurlar değiştiği için tetiklenmesi gerekiyordu. Update sorgusu eklenerek alan güncellendi.
+*/
+gFixedRates = [
+	USD -&gt; 0.00m,
+	EUR -&gt; 20.00m,
+	GBP -&gt; 0.00m
+];
+
+function OnBeforePost(sender, ev)
+{
+	if( BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null || (!BaseObject.IsNewRecord &amp;&amp; !BaseObject.IsCopyEntity))
+		return null;
+	
+	if(!BaseObject.CurrentRow.Row.IsNull("ForexCode") &amp;&amp; !string.IsNullOrWhiteSpace(BaseObject.CurrentRow.Row["ForexCode"].ToString()) &amp;&amp; gFixedRates[BaseObject.CurrentRow.Row["ForexCode"]] != 0.00m)
+		BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("ForexRate", gFixedRates[BaseObject.CurrentRow.Row["ForexCode"]]);
+	if(!BaseObject.CurrentRow.Row.IsNull("Forex2Code") &amp;&amp; !string.IsNullOrWhiteSpace(BaseObject.CurrentRow.Row["Forex2Code"].ToString()) &amp;&amp; gFixedRates[BaseObject.CurrentRow.Row["Forex2Code"]] != 0.00m)
+		BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("Forex2Rate", gFixedRates[BaseObject.CurrentRow.Row["Forex2Code"]]);
+		
+	BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("GivenPriceForexId", 2);
+	BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("GivenPriceForexRate", gFixedRates["EUR"]);
+	
+	if(BaseObject.IsCopyEntity &amp;&amp; BaseObject.Data.Tables.Contains("MA_InitialCostItem"))
+	{
+		foreach( ici in BaseObject.Data.Tables["MA_InitialCostItem"].Select("ForexCode is not null") )
+		{
+			if(gFixedRates[ici["ForexCode"]] != 0.00m)
+			{
+				ici.SetField&lt;|decimal|&gt;("ForexRate", gFixedRates[ici["ForexCode"]]);
+			
+				if(!ici.IsNull("ForexUnitPrice") &amp;&amp; Convert.ToDecimal(ici["ForexUnitPrice"]) != 0.00m)
+    				ici.SetField&lt;|decimal|&gt;("UnitPrice", Convert.ToDecimal(ici["ForexUnitPrice"]) * gFixedRates[ici["ForexCode"]]);
+    		}
+		}
+	}
+ }
+
+function OnColumnChanging(sender, ev)
+{
+	if(ev.Row.Table.TableName == "MA_InitialCostItem" &amp;&amp; ev.Column.ColumnName == "ForexRate" &amp;&amp; !ev.Row.IsNull("ForexId") &amp;&amp; Convert.ToInt32(ev.Row["ForexId"]) &lt;= 3 &amp;&amp; ev.ProposedValue != gFixedRates[ev.Row["ForexCode"]] &amp;&amp; gFixedRates[ev.Row["ForexCode"]] != 0.00m)
+    {
+    	ev.ProposedValue = gFixedRates[ev.Row["ForexCode"]];
+	}
+}
+
+function OnAfterSucceededPost(sender, ev)
+{
+	if( BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null || (!BaseObject.IsNewRecord &amp;&amp; !BaseObject.IsCopyEntity))
+		return null;
+		query ="update MA_InitialCost set CostAmount1 = (select cast(sum(((isnull(ICI.Quantity,0)*isnull(ICI.Wastage,0))/100+isnull(ICI.Quantity,0))*isnull(ICI.UnitPrice,0)) as decimal (15,2)) from MA_InitialCostItem ICI where ICI.InitialCostId=\'"+BaseObject.CurrentRow.Row["RecId"].ToString()+"\') where CompanyId =3 and RecId=\'"+BaseObject.CurrentRow.Row["RecId"].ToString()+"\'";
+	//	MessageBox.Show(query.ToString());
+	
+	UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,query);
+    //BaseObject.Get(BaseObject.CurrentRow.Row["RecId"]);
+}</ScriptText>
+</ScriptDefinition>

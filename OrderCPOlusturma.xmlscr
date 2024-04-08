@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderCPOlusturma" Enabled="false" Priority="0" ScriptName="OrderCPOlusturma">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 21.06.2023 17:05:40
+i = 0;
+function OnBeforePost(sender,eventArg)
+{
+    if(BaseObject == null
+    || BaseObject.CurrentRow == null
+    || BaseObject.CurrentRow.Row == null)
+        return null;
+
+    companyid_ = BaseObject.ActiveSession.Company.RecId;
+    currentid_ = Convert.ToInt32(BaseObject.CurrentRow.Row["CurrentAccountId"]);
+    workorderid_ = Convert.ToInt32(BaseObject.CurrentRow.Row["RecId"]);
+    inventoryid_ = Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryId"]);
+    date_ = Convert.ToDateTime(BaseObject.CurrentRow.Row["WorkOrderDate"]);
+    order_no_ = BaseObject.CurrentRow.Row["WorkOrderNo"].ToString();
+    sablon_code = "";    
+
+    query_sablon_code ="select isnull(FI.UD_KisaKod,\'\') [sabloncode] from FI_Account FI where FI.RecId=\'"+currentid_+"\'";
+    dt_sablon_code=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sablon_code", query_sablon_code.ToString());
+     if(dt_sablon_code == null || dt_sablon_code.Rows.Count&lt;=0)
+                return null;
+	
+    sablon_code = dt_sablon_code.Rows[0]["sabloncode"].ToString();
+
+    query ="select TFI.TranTypeId [ttid] , isnull(TFI.FlowItemDuration,0) [fid] ,isnull(TFI.PrevItemOrderNo,0) [pion] from CR_TransactionFlow  TF with (nolock) left join CR_TransactionFlowItem TFI with (nolock) on TFI.FlowId=TF.RecId where TF.FlowCode=\'"+sablon_code+"\'";
+    dt=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query.ToString());
+     if(dt == null || dt.Rows.Count&lt;=0)
+                return null;
+	
+
+    foreach (woi in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType = 1"))
+     workorderitemsid_ = woi["RecId"].ToString();
+     {
+        for (global:i ; global:i &lt; Convert.ToInt32(dt.Rows.Count) ; i++)
+            {
+                //MessageBox.Show(dt.Rows[i]["ttid"].ToString());
+                ttid_ = Convert.ToInt32(dt.Rows[i]["ttid"]);
+                fid_ = Convert.ToInt32(dt.Rows[i]["fid"]);
+                pion_ = Convert.ToInt32(dt.Rows[i]["pion"]);
+            // doc_max_query ="select max(DocumentNo) from CR_CustomerTransaction where DocumentNo like \'CP%\'";
+            // doc_max_dt=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "doc_max_dt", doc_max_query.ToString());
+            
+                    doc_no_ = OnDocumentNo();
+                    insert_query = " insert into CR_CustomerTransaction (CompanyId,DocumentNo,CurrentAccountId,IsOutOfOffice,TranTypeId,TranStatus";
+                    insert_query += " ,ErpModuleNo,InventoryId,WorkOrderId,PlannedDuration,InsertedAt,InCargoReceiptNo,WorkOrderItemSId,ErpModuleType)";
+                    insert_query += " values ("+companyid_+",\'"+doc_no_.ToString()+"\',"+currentid_+",1,"+ttid_+",2,"+(i+1)+","+inventoryid_+","+workorderid_+","+fid_+",convert(datetime,\'"+date_.ToString()+"\',104),\'"+order_no_+"\',\'"+workorderitemsid_.ToString()+"\',"+pion_+")";
+                    MessageBox.Show(insert_query.ToString());
+                     insert_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "insert_dt",insert_query);
+                    if(insert_dt==null || insert_dt.Rows.Count&lt;0)
+                        return null;
+                
+                    MessageBox.Show(insert_query.ToString());
+                    //MessageBox.Show(doc_no_.ToString());
+                    
+            }
+      
+    }   
+}
+
+function OnDocumentNo()
+{
+    doc_no_query = "select case ";
+    doc_no_query += " when len(cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int))=1 then \'CP0000000\'+cast((cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int)+1)as nvarchar)";
+    doc_no_query += " when len(cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int))=2 then \'CP000000\'+cast((cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int)+1)as nvarchar)";
+    doc_no_query += " when len(cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int))=3 then \'CP00000\'+cast((cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int)+1)as nvarchar)";
+    doc_no_query += " when len(cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int))=4 then \'CP0000\'+cast((cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int)+1)as nvarchar)";
+    doc_no_query += " when len(cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int))=5 then \'CP000\'+cast((cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int)+1)as nvarchar)";
+    doc_no_query += " when len(cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int))=6 then \'CP00\'+cast((cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int)+1)as nvarchar)";
+    doc_no_query += " when len(cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int))=7 then \'CP0\'+cast((cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int)+1)as nvarchar)";
+    doc_no_query += " when len(cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int))=8 then \'CP\'+cast((cast(SUBSTRING(cast(max(DocumentNo)  as nvarchar),3,100) as int)+1)as nvarchar)";
+    doc_no_query += " end [cp_docno]";
+    doc_no_query += " from CR_CustomerTransaction where DocumentNo like \'CP%\' ";
+
+    doc_no_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "doc_no_dt",doc_no_query);
+     if(doc_no_dt==null || doc_no_dt.Rows.Count&lt;0)
+       return null;
+
+    return doc_no_dt.Rows[0]["cp_docno"].ToString();
+}</ScriptText>
+</ScriptDefinition>

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderDurumKontrol" Enabled="true" Priority="0" ScriptName="OrderDurumKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 12.08.2022 14:28:22
+function OnBeforePost(sender, eventArg){      
+    if(BaseObject.CurrentRow!=null){
+		if(BaseObject.CurrentRow["Status"]==1){
+		 if(BaseObject.CurrentRow["SpecialCode"]==1){}
+	      else{                            
+	   BaseObject.ShowMessage("Durum PLANLANdı olarak seçilebilmesi için Özel Kod=1 olmalıdır..! scr{OrderDurumKontrol}");	                
+	   eventArg.Cancel = true;
+	   return null;}
+	          
+}}}</ScriptText>
+</ScriptDefinition>

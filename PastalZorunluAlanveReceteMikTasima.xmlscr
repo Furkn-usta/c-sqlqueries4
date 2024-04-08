@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PastalZorunluAlanveReceteMikTasima" Enabled="true" Priority="1" ScriptName="PastalZorunluAlanveReceteMikTasima">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderCuttingProductionEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderCuttingProductionEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 27.02.2023 16:52:17
+function OnBeforePost(sender,ev)
+{
+if(BaseObject==null
+||BaseObject.CurrentRow==null
+||BaseObject.CurrentRow.Row==null
+||BaseObject.CurrentRow.Row.IsNull("WorkOrderItemId")
+||BaseObject.CurrentRow.Row.IsNull("InventoryId"))
+return null;
+
+	 	query = "select top 1 cast(isnull(RI.Quantity,0) as decimal (15,2))  [quant] from MA_RecipeItem RI with (nolock) ";
+        query += " left join IM_Item II with (nolock) on II.RecId=RI.OwnerInventoryId ";
+        query += " left join IM_Item I with (nolock) on I.RecId=RI.InventoryId ";
+        query += " left outer join MA_WorkOrder WO with (nolock) on WO.InventoryId=II.RecId ";
+        query += " left outer join MA_WorkOrderItem WOI with (nolock) on WOI.WorkOrderId=WO.RecId and WOI.WorkOrderSubType=1 ";
+        query += " where  RI.IsCutting=1 and WOI.RecId=\'"+Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderItemId"])+"\' and";
+        query += " I.RecId =\'"+Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryId"])+"\'";
+        dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query);
+	 	
+	    if(dt==null || dt.Rows.Count&lt;0 )
+			return null;
+       
+BaseObject.CurrentRow.Row.SetField&lt;|decimal|&gt;("UD_RecipeQuantity",Convert.ToDecimal(dt.Rows[0]["quant"]));
+
+foreach(dr in BaseObject.Data.Tables["MA_WorkOrderProductionDetail"].Select(""))
+ {
+
+        if(dr.IsNull("MarkerNo") || Convert.ToDecimal(dr["MarkerNo"])  == 0m)
+		{
+			BaseObject.ShowMessage("Pastal Eni Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+ 
+        if(dr.IsNull("MarkerWidth") || Convert.ToDecimal(dr["MarkerWidth"])  == 0m)
+		{
+			BaseObject.ShowMessage("Pastal Eni Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+		
+        if(dr.IsNull("MarkerWidth") || Convert.ToDecimal(dr["MarkerWidth"])  == 0m)
+		{
+			BaseObject.ShowMessage("Pastal Eni Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+		
+			if(dr.IsNull("MarkerWidth") || Convert.ToDecimal(dr["MarkerWidth"])  == 0m)
+		{
+			BaseObject.ShowMessage("Pastal Eni Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+		
+		if(dr.IsNull("MarkerLength") || Convert.ToDecimal(dr["MarkerLength"])  == 0m)
+		{
+			BaseObject.ShowMessage("Pastal Boyu Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+		
+		if(dr.IsNull("M2Weight") || Convert.ToDecimal(dr["M2Weight"])  == 0m)
+		{
+			BaseObject.ShowMessage("m2 Ağırlığı Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+		
+		
+        if(dr.IsNull("MarkerWeight") || Convert.ToDecimal(dr["MarkerWeight"])  == 0m)
+		{
+			BaseObject.ShowMessage("Pastal Ağırlığı Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+		 if(dr.IsNull("MarkerCount") || Convert.ToDecimal(dr["MarkerCount"])  == 0m)
+		{
+			BaseObject.ShowMessage("Pastal Katı Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		} 
+		
+		if(dr.IsNull("SentForCutting") || Convert.ToDecimal(dr["SentForCutting"])  == 0m)
+		{
+			BaseObject.ShowMessage("Kesime Çıkan Alanı Boş Olamaz! {scr:PastalZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+ }
+        
+}</ScriptText>
+</ScriptDefinition>

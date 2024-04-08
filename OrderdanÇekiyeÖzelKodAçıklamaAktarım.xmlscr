@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderdanÇekiyeÖzelKodAçiklamaAktarim" Enabled="true" Priority="0" ScriptName="OrderdanÇekiyeÖzelKodAçiklamaAktarim">
+  <Events>
+    <Event Enabled="true" ObjectName="PackagingListEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="PackagingListEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 28.07.2023 13:44:39	
+/*
+Order satirina yazilan özel kod ve açiklamayi çekideki açiklama ve özel alana aktarir.
+*/
+function OnBeforePost(sender,ev)
+{
+    if (BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null)
+    return null;
+
+    foreach(pli in BaseObject.Data.Tables["IM_PackagingListItem"].Select("WorkOrderItemId is not null")) 
+                {
+                   l_sb3 = new StringBuilder();
+          		   l_sb3.Clear();  
+                   l_sb3.AppendLine("select isnull(MWOI.SpecialCode,\'\') [sc], isnull(MWOI.Explanation,\'\') [exp] from MA_WorkOrderItem MWOI with (nolock) where MWOI.RecId=\'"+pli["WorkOrderItemId"].ToString()+"\'");
+                 // MessageBox.Show(l_sb3.ToString());
+                   l_dt3 = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "l_dt3",l_sb3.ToString());
+                   
+                   
+                    if(l_dt3 == null || l_dt3.Rows.Count &lt;=0)
+                	    return null;
+                	    
+                    sc_ = l_dt3.Rows[0]["sc"].ToString();
+                    exp_ = l_dt3.Rows[0]["exp"].ToString();
+						pli.SetField&lt;|string|&gt;("SpecialCode",sc_);
+						pli.SetField&lt;|string|&gt;("Explanation",exp_);
+                }
+}</ScriptText>
+</ScriptDefinition>

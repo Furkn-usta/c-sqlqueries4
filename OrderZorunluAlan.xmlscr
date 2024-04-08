@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderZorunluAlan" Enabled="true" Priority="0" ScriptName="OrderZorunluAlan">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>
+
+ function OnBeforePost(sender,eventArg)
+ {
+      if(BaseObject == null 
+      || BaseObject.CurrentRow == null 
+      || BaseObject.CurrentRow.Row == null
+      || BaseObject.CurrentRow.Row.IsNull("IsVirtual") 
+      || BaseObject.CurrentRow.Row.IsNull("UD_CreatedByBookingControl")    
+      || Convert.ToInt16(BaseObject.CurrentRow.Row["IsVirtual"]) == 1 //Booking orderda çalışmayacaktır.
+      )//Sadece İlk kayıtta ve çalışacaktır.
+		return null;
+	
+		/* */
+	 dt= new DateTime(2023,07,05); // Temmuz 5 2023 tarihinden sonra script çalışacaktır.
+	        if(dt &gt; Convert.ToDateTime(BaseObject.CurrentRow.Row["WorkOrderDate"]))
+   				return null;
+   		
+   		
+   		
+   		if(Convert.ToInt16(BaseObject.CurrentRow.Row["CreatedByBooking"])==1 &amp;&amp; Convert.ToInt16(BaseObject.CurrentRow.Row["UD_CreatedByBookingControl"])==0)
+   		{
+   			sender.ShowMessage("Booking Orderdan Normal Order Oluşturuluyor.");
+   			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_CreatedByBookingControl",1);
+   			}
+   			if(BaseObject.IsNewRecord)
+   			{
+          if(BaseObject.CurrentRow.Row.IsNull("InitialCostId") || BaseObject.CurrentRow.Row["InitialCostId"].ToString().Trim() == "")
+              {
+                BaseObject.ShowMessage("Ön Maliyet alanı zorunludur. {scr:OrderZorunluAlan}");
+                eventArg.Cancel = true;
+                return null;
+              }
+      
+         foreach(wi in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=2 and ParentItemId is null and OrderItemGroupNo is not null"))
+                {
+                  if(wi.IsNull("DepartureDate") || wi["DepartureDate"].ToString().Trim() == "")
+                    {
+                      BaseObject.ShowMessage(wi["OrderItemGroupNo"]+". Satır Müşteri İsteme Tarihi alanı zorunludur. {scr:OrderZorunluAlan}");
+                      eventArg.Cancel = true;
+                      return null;
+                    }  
+                     if(wi.IsNull("RequirementGroup") || wi["RequirementGroup"].ToString().Trim() == "")
+                    {
+                      BaseObject.ShowMessage(wi["OrderItemGroupNo"]+". Satır Tedarik Grubu alanı zorunludur. {scr:OrderZorunluAlan}");
+                      eventArg.Cancel = true;
+                      return null;
+                    } 
+                     if(wi.IsNull("UD_MOzelKod") || wi["UD_MOzelKod"].ToString().Trim() == "")
+                    {
+                      BaseObject.ShowMessage(wi["OrderItemGroupNo"]+". Satır  Müşteri Özel Kod alanı zorunludur. {scr:OrderZorunluAlan}");
+                      eventArg.Cancel = true;
+                      return null;
+                    } 
+               	 }
+                }
+ }
+ 
+</ScriptText>
+</ScriptDefinition>

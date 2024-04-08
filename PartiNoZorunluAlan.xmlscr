@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PartiNoZorunluAlan" Enabled="true" Priority="0" ScriptName="PartiNoZorunluAlan">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 20.02.2024 09:45:10 PartiNoZorunluAlan
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null || BaseObject.CurrentRow.Row.IsNull("ReceiptType"))
+		return null;
+		
+	 if(Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"])&gt;100)
+            depo_rec = BaseObject.CurrentRow.Row["OutWarehouseId"].ToString();
+        else 
+            depo_rec = BaseObject.CurrentRow.Row["InWarehouseId"].ToString();
+      if (depo_rec.ToString() != "12")
+           {
+           	 return null;
+           }
+		
+	foreach (ri in BaseObject.Data.Tables["IM_ReceiptItem"].Select("ItemType = 1"))
+	{
+		if(ri.IsNull("PartyNo") || ri["PartyNo"].ToString().Trim()  == String.Empty)
+		{
+			BaseObject.ShowMessage("PartiNo alanı boş olamaz {scr:PartiNoZorunluAlan}");
+			ev.Cancel = true;
+			return null;
+		}
+	}
+}</ScriptText>
+</ScriptDefinition>

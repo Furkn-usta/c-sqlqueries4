@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderLogKontrolBaslik" Enabled="true" Priority="0" ScriptName="OrderLogKontrolBaslik">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChanged" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories>
+    <History EntryDate="2023-03-14T00:00:00">
+      <Change>UD_Control olarak açılan checkbox alan işaretlendiği zaman order ekranında yapılan tüm değişiklikleri istenilen alana (scriptte UD_KumasAdi olarak görünmektedir) yazdırmaktadır.
+</Change>
+    </History>
+  </Histories>
+  <ScriptText>//Generated on 10.03.2023 16:10:38
+/*
+UD_Control(UD_CuttingApproval) olarak açılan checkbox alan işaretlendiği zaman order ekranında yapılan tüm değişiklikleri istenilen alana (scriptte UD_KumasAdi olarak görünmektedir) yazdırmaktadır.
+*/
+date="";	
+control="";	
+function OnColumnChanged(sender, ev)
+{
+	if(BaseObject == null || BaseObject.ActiveSession == null || ev == null || ev.Row == null || ev.Row.Table == null || ev.Row.Table.TableName != "MA_WorkOrder")
+		return null;
+	
+		if(ev.Column.ColumnName != "UD_CuttingApproval" || ev.Row.IsNull("UD_CuttingApproval") || ev.Row["UD_CuttingApproval"].ToString()=="False" )
+		return null;
+ 		if(ev.Row["UD_CuttingApproval"].ToString()=="True" &amp;&amp; ev.Column.ColumnName!="WorkOrderNo"){
+ 		query = "select GETDATE() [tarih]";
+		dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+			if(dt==null &amp;&amp; dt.Rows.Count&lt;0)
+  			  return null;                   
+   global:date=dt.Rows[0]["tarih"].ToString();
+   global:control=ev.Row["UD_CuttingApproval"].ToString();
+         
+         }  
+ }		
+ 
+  function OnBeforePost(sender, ev)
+{
+if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null || BaseObject.CurrentRow.Row.IsNull("UD_CuttingApproval")
+|| BaseObject.CurrentRow.Row["UD_CuttingApproval"].ToString() == "False" )
+		return null;
+		if(BaseObject.CurrentRow.Row["UD_CuttingApproval"].ToString()=="True"){
+		
+		 //BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_KumasAdi",global:date);
+   
+         foreach(l_rows in BaseObject.Data.Tables["MA_WorkOrder"].Columns)
+         {
+         	if(BaseObject.CurrentRow.Row[l_rows.ColumnName,DataRowVersion.Original]!=BaseObject.CurrentRow.Row[l_rows.ColumnName,DataRowVersion.Current])
+ 			{
+ 			
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+l_rows.ColumnName.ToString());
+ 		
+ 			}
+ 			 
+         }
+		
+		}
+}
+ </ScriptText>
+</ScriptDefinition>

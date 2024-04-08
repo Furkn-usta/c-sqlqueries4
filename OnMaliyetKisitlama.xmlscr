@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OnMaliyetKisitlama" Enabled="true" Priority="0" ScriptName="OnMaliyetKisitlama">
+  <Events>
+    <Event Enabled="true" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" ObjectName="ContractEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="ContractEN" />
+  </Events>
+  <Histories>
+    <History EditedBy="Anıl" EntryDate="2023-01-12T00:00:00">
+      <Change>Ön maliyeti seçilmeyen orderlara, kumaş, aksesuar ve iplik için sipariş ve irsaliye tahsisi yapılmasına sistem izin vermeyecek.
+Ön maliyeti seçilmeyen orderlara satın alma siparişi ve fason sözleşme girişi yapılmasına sistem izin vermeyecek</Change>
+    </History>
+  </Histories>
+  <ScriptText>//Generated on 12.01.2023 09:46:56
+function OnBeforePost(sender,e)
+{
+	if (BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+			return null;
+		ic_qua=0;	
+	if(BaseObject.Name == "OrderReceiptEN" || BaseObject.Name == "InventoryReceiptEN")
+	{
+		l_sb = new StringBuilder();		
+		foreach(dr in BaseObject.Data.Tables["IM_ItemAllocation"].Select("WorkOrderItemId is not null")) 
+ 		{
+ 			 if(dr.RowState==DataRowState.Detached || dr.RowState==DataRowState.Deleted)
+    	    		continue;
+    	    		
+		   
+           l_sb.Clear();
+           l_sb.AppendLine("select isnull(WO.InitialCostId,0)[InitialCostId],isnull(WO.WorkOrderNo,\'\') OrderNo from MA_WorkOrder WO with (nolock) ");
+           l_sb.AppendLine("left join MA_WorkOrderItem WOI with (nolock) on WO.RecId = WOI.WorkOrderId");
+           l_sb.AppendLine("where WOI.RecId ="+ dr["WorkOrderItemId"].ToString()+" and WO.WorkOrderType = 15");
+           MessageBox.Show(l_sb.ToString());
+           l_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "l_dt",l_sb.ToString());
+           
+            if(l_dt != null &amp;&amp; l_dt.Rows.Count &gt; 0 &amp;&amp; Convert.ToInt32(l_dt.Rows[0]["InitialCostId"])== 0)
+           {
+           	BaseObject.ShowMessage(l_dt.Rows[0]["OrderNo"].ToString()+" numarali order\'in ön maliyet çalışması yoktur! src:ÖnMaliyetKısıtlama");
+		    e.Cancel = true;
+    	    return null;
+           }
+
+            initial_query = " select isnull(ICI.UnitPrice,0) [ic_quantity] from MA_InitialCost IC  with (nolock) ";
+            initial_query += " left join MA_InitialCostItem ICI with (nolock) on ICI.InitialCostId=IC.RecId ";;
+            initial_query += " where IC.RecId=\'"+l_dt.Rows[0]["InitialCostId"].ToString()+"\' and ICI.InventoryId=\'"+dr["InventoryId"].ToString()+"\'";
+            initial_query_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "initial_query_dt",initial_query.ToString());
+            
+            ic_qua =   initial_query_dt.Rows[0]["ic_quantity"].ToString();
+            if(initial_query_dt == null || initial_query_dt.Rows.Count &lt;= 0)
+                return null;
+
+    	}    
+
+            foreach(ri in BaseObject.Data.Tables["IM_ReceiptItem"].Select("UnitPrice is not null")) 
+                {
+                    if(Convert.ToDecimal(ic_qua) &gt; Convert.ToDecimal(ri["UnitPrice"]))
+                    {
+                        sender.ShowMessage("Ön Maliyet Fiyatı Satır Fiyatından Büyük Olamaz..{src:ÖnMaliyetKısıtlama}");
+                         e.Cancel = true;
+    	                return null;
+                    }
+                }
+
+	}
+	
+	if(BaseObject.Name == "ContractEN")
+	{	
+	  l_sb2 = new StringBuilder();
+	   foreach(dr in BaseObject.Data.Tables["SM_ContractItem"].Select("WorkOrderReceiptItemId is not null")) 
+ 		{
+ 			 if(dr.RowState==DataRowState.Detached || dr.RowState==DataRowState.Deleted)
+    	    		continue;
+    	    		
+		   
+           l_sb2.Clear();
+           l_sb2.AppendLine("select isnull(WO.InitialCostId,0)[InitialCostId],isnull(WO.WorkOrderNo,\'\') OrderNo from MA_WorkOrder WO with (nolock) ");
+           l_sb2.AppendLine("left join MA_WorkOrderItem WOI with (nolock) on WO.RecId = WOI.WorkOrderId");
+           l_sb2.AppendLine("where WOI.RecId ="+ dr["WorkOrderReceiptItemId"].ToString()+" and WO.WorkOrderType = 15");
+           
+           l_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "l_dt",l_sb2.ToString());
+           
+            if(l_dt != null &amp;&amp; l_dt.Rows.Count &gt; 0 &amp;&amp; Convert.ToInt32(l_dt.Rows[0]["InitialCostId"])== 0)
+           {
+           	BaseObject.ShowMessage(l_dt.Rows[0]["OrderNo"].ToString()+" numarali order\'in ön maliyet çalışması yoktur! src:ÖnMaliyetKısıtlama");
+		    e.Cancel = true;
+    	    return null;
+           }
+    	}
+	  
+	  		
+	}
+}</ScriptText>
+</ScriptDefinition>

@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderRotaZorunluAlanYelekliTakım" Enabled="true" Priority="0" ScriptName="OrderRotaZorunluAlanYelekliTakım">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 25.03.2024 11:02:30 OrderRotaZorunluAlanYelekliTakım
+function OnBeforePost(sender,eventArg)
+{
+ if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null)
+    return null;
+	i = 0;
+	foreach(dr in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=1"))
+		{
+		i++;
+		if (i==3)
+			{
+			if(Convert.ToInt32(dr["RouteId"]) == 1)// yelek rota id si yazılacak
+				{
+				sender.ShowMessage("3 Model Seçiliyken Sadece Yelekli Takım Rotası Seçilebilir.! {scr:OrderRotaZorunluAlan} ");
+				eventArg.Cancel = true;
+				return null;
+				}
+			}
+		}
+
+}
+</ScriptText>
+</ScriptDefinition>

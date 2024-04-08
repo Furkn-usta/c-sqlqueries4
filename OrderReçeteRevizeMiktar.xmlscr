@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderReçeteRevizeMiktar" Enabled="true" Priority="0" ScriptName="OrderReçeteRevizeMiktar">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChanged" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 27.11.2023 16:48:28 OrderReçeteRevizeMiktar
+function OnColumnChanged(sender, e)
+{
+	if (BaseObject == null 
+	|| BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null )
+		return null;
+
+    	if(e.Row.Table.TableName == "MA_RecipeItem" 
+        &amp;&amp; (e.Column.ColumnName == "UD_RRevize1" || e.Column.ColumnName == "UD_RRevize2" || e.Column.ColumnName == "UD_RRevize3" || e.Column.ColumnName == "UD_RRevize4" || e.Column.ColumnName == "UD_RRevize5")
+        &amp;&amp; ((e.Row.IsNull("UD_RRevize1") || Convert.ToDecimal(e.Row["UD_RRevize1"])!= 0)
+        || (e.Row.IsNull("UD_RRevize2") || Convert.ToDecimal(e.Row["UD_RRevize2"])!= 0)
+        || (e.Row.IsNull("UD_RRevize3") || Convert.ToDecimal(e.Row["UD_RRevize3"])!= 0)
+        || (e.Row.IsNull("UD_RRevize4") || Convert.ToDecimal(e.Row["UD_RRevize4"])!= 0)
+        || (e.Row.IsNull("UD_RRevize5") || Convert.ToDecimal(e.Row["UD_RRevize5"])!= 0))
+        )
+        drs = BaseObject.Extensions["InventoryRecipeServiceExtension"].RecipeTable.Select("OriginalRowId = " + e.Row["RecId"].ToString());
+        if(drs != null &amp;&amp; drs.Length &gt; 0)
+        {
+            if(e.Column.ColumnName == "UD_RRevize1")
+            {
+            //	MessageBox.Show(DateTime.Today.ToString());
+                e.Row.SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize1"]));
+				drs[0].SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize1"]));
+				
+				e.Row.SetField&lt;|DateTime|&gt;("UD_DRevize1",Convert.ToDateTime(DateTime.Today));
+				drs[0].SetField&lt;|DateTime|&gt;("UD_DRevize1",Convert.ToDateTime(DateTime.Today));
+            }
+            if(e.Column.ColumnName == "UD_RRevize2")
+            {
+                e.Row.SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize2"]));
+				drs[0].SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize2"]));
+
+                e.Row.SetField&lt;|DateTime|&gt;("UD_DRevize2",Convert.ToDateTime(DateTime.Today));
+				drs[0].SetField&lt;|DateTime|&gt;("UD_DRevize2",Convert.ToDateTime(DateTime.Today));
+            }
+            if(e.Column.ColumnName == "UD_RRevize3")
+            {
+                e.Row.SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize3"]));
+				drs[0].SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize3"]));
+
+                   e.Row.SetField&lt;|DateTime|&gt;("UD_DRevize3",Convert.ToDateTime(DateTime.Today));
+				drs[0].SetField&lt;|DateTime|&gt;("UD_DRevize3",Convert.ToDateTime(DateTime.Today));
+            }
+            if(e.Column.ColumnName == "UD_RRevize4")
+            {
+                e.Row.SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize4"]));
+				drs[0].SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize4"]));
+
+                   e.Row.SetField&lt;|DateTime|&gt;("UD_DRevize4",Convert.ToDateTime(DateTime.Today));
+				drs[0].SetField&lt;|DateTime|&gt;("UD_DRevize4",Convert.ToDateTime(DateTime.Today));
+            }
+            if(e.Column.ColumnName == "UD_RRevize5")
+            {
+                e.Row.SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize5"]));
+				drs[0].SetField&lt;|decimal|&gt;("Quantity",Convert.ToDecimal(e.Row["UD_RRevize5"]));
+
+                   e.Row.SetField&lt;|DateTime|&gt;("UD_DRevize5",Convert.ToDateTime(DateTime.Today));
+				drs[0].SetField&lt;|DateTime|&gt;("UD_DRevize5",Convert.ToDateTime(DateTime.Today));
+            }    
+        }
+        
+}
+</ScriptText>
+</ScriptDefinition>

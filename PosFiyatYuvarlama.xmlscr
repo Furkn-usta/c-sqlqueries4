@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PosFiyatYuvarlama" Enabled="true" Priority="0" ScriptName="PosFiyatYuvarlama">
+  <Events>
+    <Event Enabled="true" ObjectName="PosEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChanged" ObjectName="PosEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Yuvarlamasi yapilan satirlari tutmak icin
+idlist = new List&lt;|long|&gt;();
+
+function OnColumnChanged(sender, e)
+{
+    if (e == null || e.Row == null || e.Row.Table == null || e.Row.Table.TableName != "IM_ReceiptItem" || e.Column.ColumnName != "UnitPrice")
+		return null;
+	
+	if (global:idlist.Contains(Convert.ToInt64(e.Row["RecId"])))
+		return null;
+	
+	if (!DoubleUtil.CompareFloatIsNullOrZero(e.Row[e.Column.ColumnName], 4))
+	{
+		l_price = Convert.ToDecimal(e.Row[e.Column.ColumnName]);
+		l_roundedprice = Math.Round(l_price, 0, MidpointRounding.AwayFromZero);
+		
+		//Satirin id si listeye ekleniyor yoksa setfield ile script tekrar ayni satir icin calisacak
+		global:idlist.Add(Convert.ToInt64(e.Row["RecId"]));
+		//MessageBox.Show(l_roundedprice.ToString());
+		
+		query =  "SELECT ROUND(\'"+l_roundedprice.ToString()+"\', -1) [round_number]";
+		str = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "str",query);
+			if(str==null || str.Rows.Count&lt;=0)
+			   return null;
+	//	MessageBox.Show(str.Rows[0]["round_number"].ToString());	   
+		e.Row.SetField&lt;|decimal|&gt;(e.Column.ColumnName, Convert.ToDecimal(str.Rows[0]["round_number"]));		
+	}
+}</ScriptText>
+</ScriptDefinition>

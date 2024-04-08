@@ -1,0 +1,278 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderLogKontrolSatır" Enabled="true" Priority="1" ScriptName="OrderLogKontrolSatır">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChanged" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnItemBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories>
+    <History EntryDate="2023-03-14T00:00:00">
+      <Change>UD_Control olarak açılan checkbox alan işaretlendiği zaman order ekranında yapılan tüm değişiklikleri istenilen alana (scriptte UD_KumasAdi olarak görünmektedir) yazdırmaktadır.
+</Change>
+    </History>
+  </Histories>
+  <ScriptText>//Generated on 13.03.2023 17:49:31
+
+/*
+UD_Control(UD_CuttingApproval) olarak açılan checkbox alan işaretlendiği zaman order ekranında yapılan tüm değişiklikleri istenilen alana (scriptte UD_KumasAdi olarak görünmektedir) yazdırmaktadır.
+*/
+date="";	
+control="";	
+function OnColumnChanged(sender, ev)
+{
+	if(BaseObject == null || BaseObject.ActiveSession == null || ev == null || ev.Row == null || ev.Row.Table == null || ev.Row.Table.TableName != "MA_WorkOrder")
+		return null;
+	
+		if(ev.Column.ColumnName != "UD_CuttingApproval" || ev.Row.IsNull("UD_CuttingApproval") || ev.Row["UD_CuttingApproval"].ToString()=="False" )
+		return null;
+ 		if(ev.Row["UD_CuttingApproval"].ToString()=="True" &amp;&amp; ev.Column.ColumnName!="WorkOrderNo"){
+ 		query = "select GETDATE() [tarih]";
+		dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+			if(dt==null &amp;&amp; dt.Rows.Count&lt;0)
+  			  return null;                   
+   global:date=dt.Rows[0]["tarih"].ToString();
+   global:control=ev.Row["UD_CuttingApproval"].ToString();
+         
+         }  
+ }
+ 	 function OnBeforePost(sender, ev)
+{
+if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null 
+|| BaseObject.CurrentRow.Row.IsNull("UD_CuttingApproval")
+|| BaseObject.CurrentRow.Row["UD_CuttingApproval"].ToString() == "False" )
+		return null;
+		if(BaseObject.CurrentRow.Row["UD_CuttingApproval"].ToString()=="True"){
+		
+		 //BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_KumasAdi",global:date);
+   
+         foreach(l_rows in BaseObject.Data.Tables["MA_WorkOrder"].Columns)
+         {
+         	if(BaseObject.CurrentRow.Row[l_rows.ColumnName,DataRowVersion.Original]!=BaseObject.CurrentRow.Row[l_rows.ColumnName,DataRowVersion.Current])
+ 			{
+ 			
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+l_rows.ColumnName.ToString());
+ 		
+ 			}
+ 			 
+         }
+		
+		}
+}	
+ 
+  function OnItemBeforePost(sender, ev)
+{
+if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null )
+		return null;
+		if(BaseObject.CurrentRow.Row["UD_CuttingApproval"].ToString()=="True"){
+		
+		// BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_KumasAdi",global:date);
+   
+         foreach(l_rows in BaseObject.Data.Tables["MA_WorkOrderItem"].Rows)
+         {
+				
+				if(l_rows["DepartureDate",DataRowVersion.Original] != l_rows["DepartureDate",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Bitiş Zamanı= "+l_rows["DepartureDate"].ToString());
+        		
+        		if(l_rows["ActualArrivalDate",DataRowVersion.Original] != l_rows["ActualArrivalDate",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Gerçekleşen Başlangıç= "+l_rows["ActualArrivalDate"].ToString());
+        	
+        		if(l_rows["ActualDepartureDate",DataRowVersion.Original] != l_rows["ActualDepartureDate",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Gerçekleşen Bitiş= "+l_rows["ActualDepartureDate"].ToString());
+        
+        	    if(l_rows["Distance",DataRowVersion.Original] != l_rows["Distance",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Mesafe= "+l_rows["Distance"].ToString());
+        		
+        		if(l_rows["Duration",DataRowVersion.Original] != l_rows["Duration",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Süre= "+l_rows["Duration"].ToString());
+        	
+        		if(l_rows["SpecialCode",DataRowVersion.Original] != l_rows["SpecialCode",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Özel Kod= "+l_rows["SpecialCode"].ToString());
+        
+        		if(l_rows["Explanation",DataRowVersion.Original] != l_rows["Explanation",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Açıklama= "+l_rows["Explanation"].ToString());
+        
+        		if(l_rows["CustomerOrderNo",DataRowVersion.Original] != l_rows["CustomerOrderNo",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Müşteri OrderNo= "+l_rows["CustomerOrderNo"].ToString());
+        		
+        		if(l_rows["CurrentAccountId",DataRowVersion.Original] != l_rows["CurrentAccountId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Cari= "+l_rows["CurrentAccountId"].ToString());
+        	
+        		if(l_rows["ProjectId",DataRowVersion.Original] != l_rows["ProjectId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Proje No= "+l_rows["ProjectId"].ToString());
+        
+        		if(l_rows["ForexId",DataRowVersion.Original] != l_rows["ForexId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Döviz Birim= "+l_rows["ForexId"].ToString());
+        
+        		if(l_rows["ForexUnitPrice",DataRowVersion.Original] != l_rows["ForexUnitPrice",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Döviz Birim Fiyat= "+l_rows["ForexUnitPrice"].ToString());
+        		
+        		if(l_rows["InventoryId",DataRowVersion.Original] != l_rows["InventoryId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Malzeme Kodu= "+l_rows["InventoryId"].ToString());
+        	
+        		if(l_rows["ArrivalDate",DataRowVersion.Original] != l_rows["ArrivalDate",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Başlangıç Zamanı= "+l_rows["ArrivalDate"].ToString());
+        	
+        		if(l_rows["OperationCode",DataRowVersion.Original] != l_rows["OperationCode",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Operasyon Kodu= "+l_rows["OperationCode"].ToString());
+        	
+        			if(l_rows["ParentItemId",DataRowVersion.Original] != l_rows["ParentItemId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Detay= "+l_rows["ParentItemId"].ToString());
+        	
+        			if(l_rows["UnitPrice",DataRowVersion.Original] != l_rows["UnitPrice",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Birim Fiyat= "+l_rows["UnitPrice"].ToString());
+        	
+        			if(l_rows["InventoryUnitId",DataRowVersion.Original] != l_rows["InventoryUnitId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Malzeme Birimi= "+l_rows["InventoryUnitId"].ToString());
+        	
+        			if(l_rows["ServiceCardId",DataRowVersion.Original] != l_rows["ServiceCardId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Hizmet Kodu= "+l_rows["ServiceCardId"].ToString());
+        	
+        			if(l_rows["ServiceCardUnitId",DataRowVersion.Original] != l_rows["ServiceCardUnitId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Hizmet Birimi= "+l_rows["ServiceCardUnitId"].ToString());
+        	
+        			if(l_rows["RouteId",DataRowVersion.Original] != l_rows["RouteId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Route= "+l_rows["RouteId"].ToString());
+        	
+        			if(l_rows["ProcessId",DataRowVersion.Original] != l_rows["ProcessId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Operasyon Kodu= "+l_rows["ProcessId"].ToString());
+        	
+        			if(l_rows["RouteItemId",DataRowVersion.Original] != l_rows["RouteItemId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Rota Satırı= "+l_rows["RouteItemId"].ToString());
+        	
+        			if(l_rows["ResourceId",DataRowVersion.Original] != l_rows["ResourceId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Kaynak / Makina= "+l_rows["ResourceId"].ToString());
+        	
+        			if(l_rows["TimeUnit",DataRowVersion.Original] != l_rows["TimeUnit",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Zaman Birimi= "+l_rows["TimeUnit"].ToString());
+        	
+        			if(l_rows["ProcessTime",DataRowVersion.Original] != l_rows["ProcessTime",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"İşlem Zamanı= "+l_rows["ProcessTime"].ToString());
+        	
+        			if(l_rows["Width",DataRowVersion.Original] != l_rows["Width",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"En= "+l_rows["Width"].ToString());
+        	
+        			if(l_rows["Weight",DataRowVersion.Original] != l_rows["Weight",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Gramaj= "+l_rows["Weight"].ToString());
+        	
+        			if(l_rows["Quantity",DataRowVersion.Original] != l_rows["Quantity",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Miktar= "+l_rows["Quantity"].ToString());
+        	
+        			if(l_rows["ShippedGrossQty",DataRowVersion.Original] != l_rows["ShippedGrossQty",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Brüt Sevk Mik.= "+l_rows["ShippedGrossQty"].ToString());
+        	
+        			if(l_rows["ShippedNetQty",DataRowVersion.Original] != l_rows["ShippedNetQty",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Net Sevk Mik.= "+l_rows["ShippedNetQty"].ToString());
+        	
+        		
+ 			
+ 				if(l_rows["PackageQuantity",DataRowVersion.Original] != l_rows["PackageQuantity",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Paket Miktarı= "+l_rows["PackageQuantity"].ToString());
+        		
+        		if(l_rows["Status",DataRowVersion.Original] != l_rows["Status",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Durum= "+l_rows["Status"].ToString());
+        	
+        		if(l_rows["ProxyNo",DataRowVersion.Original] != l_rows["ProxyNo",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Proxy No= "+l_rows["ProxyNo"].ToString());
+        
+        	    if(l_rows["IsClosed",DataRowVersion.Original] != l_rows["IsClosed",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Açık / Kapalı= "+l_rows["IsClosed"].ToString());
+        		
+        		if(l_rows["IsChecked",DataRowVersion.Original] != l_rows["IsChecked",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Kontrol Edildi= "+l_rows["IsChecked"].ToString());
+        	
+        		if(l_rows["IsApproved",DataRowVersion.Original] != l_rows["IsApproved",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Onaylandı= "+l_rows["IsApproved"].ToString());
+        
+        		if(l_rows["IsCancelled",DataRowVersion.Original] != l_rows["IsCancelled",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"İptal Edildi= "+l_rows["IsCancelled"].ToString());
+        		
+        		if(l_rows["CountryId",DataRowVersion.Original] != l_rows["CountryId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Ülke= "+l_rows["CountryId"].ToString());
+        	
+        		if(l_rows["PartOrderNo",DataRowVersion.Original] != l_rows["PartOrderNo",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Part Order No= "+l_rows["PartOrderNo"].ToString());
+        
+        		if(l_rows["CExplanation",DataRowVersion.Original] != l_rows["CExplanation",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Renk Açıklama= "+l_rows["CExplanation"].ToString());
+        
+        		if(l_rows["Fine",DataRowVersion.Original] != l_rows["Fine",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Fayn= "+l_rows["Fine"].ToString());
+        		
+        		if(l_rows["Pus",DataRowVersion.Original] != l_rows["Pus",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Pus= "+l_rows["Pus"].ToString());
+        	
+        		if(l_rows["IsPrinted",DataRowVersion.Original] != l_rows["IsPrinted",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Basıldı= "+l_rows["IsPrinted"].ToString());
+        	
+        		if(l_rows["PrintCount",DataRowVersion.Original] != l_rows["PrintCount",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Baskı Sayısı= "+l_rows["PrintCount"].ToString());
+        	
+        		if(l_rows["IsTrim",DataRowVersion.Original] != l_rows["IsTrim",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Akseuar= "+l_rows["IsTrim"].ToString());
+        	
+        		if(l_rows["PurchasePrice",DataRowVersion.Original] != l_rows["PurchasePrice",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Satın Alma Fiyatı= "+l_rows["PurchasePrice"].ToString());
+        	
+        		if(l_rows["HandoverDate",DataRowVersion.Original] != l_rows["HandoverDate",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Fabrika Teslim Tarihi= "+l_rows["HandoverDate"].ToString());
+        	
+ 				if(l_rows["CuttingApprovedDate",DataRowVersion.Original] != l_rows["CuttingApprovedDate",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Kesim Onay Tarihi= "+l_rows["CuttingApprovedDate"].ToString());
+        	
+        		if(l_rows["TypeOfShipment",DataRowVersion.Original] != l_rows["TypeOfShipment",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Sevk Şekli= "+l_rows["TypeOfShipment"].ToString());
+        		
+        		if(l_rows["FabricTypeId",DataRowVersion.Original] != l_rows["FabricTypeId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Kumaş Türü= "+l_rows["FabricTypeId"].ToString());
+        		
+        		if(l_rows["DiscountType",DataRowVersion.Original] != l_rows["DiscountType",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"İndirim Tipi= "+l_rows["DiscountType"].ToString());
+        	
+        	
+        		if(l_rows["DiscountAmount",DataRowVersion.Original] != l_rows["DiscountAmount",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"İndirim= "+l_rows["DiscountAmount"].ToString());
+        	
+ 				if(l_rows["PurchasePriceForexId",DataRowVersion.Original] != l_rows["PurchasePriceForexId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Alış Döviz= "+l_rows["PurchasePriceForexId"].ToString());
+        	
+        		if(l_rows["ShipmentDate",DataRowVersion.Original] != l_rows["ShipmentDate",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Sevk Tarihi= "+l_rows["ShipmentDate"].ToString());
+        	
+        		if(l_rows["RecipeItemId",DataRowVersion.Original] != l_rows["RecipeItemId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Reçete Satırı= "+l_rows["RecipeItemId"].ToString());
+        	
+        		if(l_rows["ManufacturingFactoryId",DataRowVersion.Original] != l_rows["ManufacturingFactoryId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Fabrika= "+l_rows["ManufacturingFactoryId"].ToString());
+        	
+        			if(l_rows["RecipeItemCondition",DataRowVersion.Original] != l_rows["RecipeItemCondition",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Reçete Koşulu= "+l_rows["RecipeItemCondition"].ToString());
+        	
+ 				if(l_rows["OrderItemGroupCondition",DataRowVersion.Original] != l_rows["OrderItemGroupCondition",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Grup Kodu= "+l_rows["OrderItemGroupCondition"].ToString());
+        	
+        		if(l_rows["OrderItemGroupNo",DataRowVersion.Original] != l_rows["OrderItemGroupNo",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Grup No= "+l_rows["OrderItemGroupNo"].ToString());
+        	
+        		if(l_rows["TWorkOrderItemId",DataRowVersion.Original] != l_rows["TWorkOrderItemId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Order Satırı= "+l_rows["TWorkOrderItemId"].ToString());
+        	
+        		if(l_rows["SizeSetId",DataRowVersion.Original] != l_rows["SizeSetId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Ölçü Tablosu= "+l_rows["SizeSetId"].ToString());
+        	
+        		if(l_rows["EximCreditContractId",DataRowVersion.Original] != l_rows["EximCreditContractId",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Sözleşme= "+l_rows["EximCreditContractId"].ToString());
+        	
+ 				if(l_rows["OrderProductionGroup",DataRowVersion.Original] != l_rows["OrderProductionGroup",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Üretim Grubu= "+l_rows["OrderProductionGroup"].ToString());
+        	
+        		if(l_rows["RequirementGroup",DataRowVersion.Original] != l_rows["RequirementGroup",DataRowVersion.Current])
+				BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",BaseObject.CurrentRow.Row["UD_AnaKumas"].ToString()+Environment.NewLine+"Tedarik Grubu= "+l_rows["RequirementGroup"].ToString());
+        	
+ 			 
+         }
+		
+		}
+}
+ </ScriptText>
+</ScriptDefinition>

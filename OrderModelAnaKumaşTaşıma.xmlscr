@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderModelAnaKumaşTaşıma" Enabled="true" Priority="0" ScriptName="OrderModelAnaKumaşTaşıma">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 18.01.2023 16:13:22
+
+function OnBeforePost(sender,ev)
+
+{
+    if(BaseObject==null
+    ||BaseObject.CurrentRow==null
+    ||BaseObject.CurrentRow.Row==null
+    ||BaseObject.CurrentRow.Row.IsNull("RecId") )
+    return null;
+    
+  
+query = "select top 1 isnull(II.InventoryName,\'\') [ana_kumas] from MA_RecipeItem RI with (nolock) ";
+query+= "left join IM_Item I with (nolock) on I.RecId=RI.OwnerInventoryId 	  ";
+query+= "left join IM_Item II with (nolock) on II.RecId=RI.InventoryId 	  ";
+query+= "left join MA_WorkOrder WO with (nolock) on WO.InventoryId=I.RecId where  ";
+query+= "RI.IsMaster=1 and II.AccessCode=\'FABRIC\' and  WO.RecId="+Convert.ToInt32(BaseObject.CurrentRow.Row["RecId"]);
+   
+    dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+
+    if(dt==null &amp;&amp; dt.Rows.Count&lt;0)
+    return null;
+
+    BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_AnaKumas",dt.Rows[0]["ana_kumas"].ToString());
+}</ScriptText>
+</ScriptDefinition>

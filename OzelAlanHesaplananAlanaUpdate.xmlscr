@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OzelAlanHesaplananAlanaUpdate" Enabled="true" Priority="0" ScriptName="OzelAlanHesaplananAlanaUpdate">
+  <Events>
+    <Event Enabled="true" ObjectName="InitialCostEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="InitialCostEN" />
+  </Events>
+  <Histories />
+  <ScriptText>
+  function OnAfterSucceededPost(sender ,eventArg)
+ {
+ 
+    if(BaseObject!=null 
+    &amp;&amp; BaseObject.CurrentRow!=null 
+    &amp;&amp; BaseObject.CurrentRow.Row!=null)
+    {
+
+
+tplm=Convert.ToDecimal(BaseObject.CurrentRow.Row["CalculatedPrice"])+Convert.ToDecimal(BaseObject.CurrentRow.Row["UD_GenelGiderOzel"]);
+UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,"update MA_InitialCost set CalculatedPrice=\'"+tplm.ToString().Replace(',','.')+"\' where RecId=\'"+BaseObject.CurrentRow.Row["RecId"].ToString()+"\'");
+		
+
+     
+  }  
+ }
+
+</ScriptText>
+</ScriptDefinition>

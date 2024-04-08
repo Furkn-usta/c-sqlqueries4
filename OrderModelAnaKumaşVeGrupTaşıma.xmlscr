@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderModelAnaKumaşVeGrupTaşıma" Enabled="true" Priority="0" ScriptName="OrderModelAnaKumaşVeGrupTaşıma">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 18.01.2023 16:13:22
+
+function OnBeforePost(sender,ev)
+
+{
+    if(BaseObject==null
+    ||BaseObject.CurrentRow==null
+    ||BaseObject.CurrentRow.Row==null )
+    return null;
+    
+  
+	query = "select isnull(II.InventoryName,\'\') + \'  \' from MA_RecipeItem RI with (nolock) ";
+	query+= "left join IM_Item I with (nolock) on I.RecId=RI.OwnerInventoryId 	  ";
+	query+= "left join IM_Item II with (nolock) on II.RecId=RI.InventoryId 	  ";
+	query+= "where RI.IsMaster=1 and II.AccessCode=\'FABRIC\' and I.RecId="+Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryId"])+" for xml path (\'\') ";
+	dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+    if(dt==null &amp;&amp; dt.Rows.Count&lt;0)
+    return null;
+
+    BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_KumasAdi",dt.Rows[0][0].ToString());
+    
+    query2 = "select isnull(G.GroupName,\'\') + \'  \'  from MA_RecipeItem RI with (nolock) ";
+	query2 += "left join IM_Item I with (nolock) on I.RecId=RI.OwnerInventoryId 	  ";
+	query2 += "left join IM_Item II with (nolock) on II.RecId=RI.InventoryId 	  ";
+	query2 += "left join IM_Group G with (nolock) on G.RecId=II.GroupId 	  ";	
+	query2 += "where RI.IsMaster=1 and II.AccessCode=\'FABRIC\' and I.RecId="+Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryId"])+" for xml path (\'\') ";
+	dt2 = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt2",query2);
+    if(dt2==null &amp;&amp; dt2.Rows.Count&lt;0)
+    return null;
+
+	 BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_KumasGrupKodu",dt2.Rows[0][0].ToString());
+   
+
+}</ScriptText>
+</ScriptDefinition>

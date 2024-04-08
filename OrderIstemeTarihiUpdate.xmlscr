@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderIstemeTarihiUpdate" Enabled="true" Priority="0" ScriptName="OrderIstemeTarihiUpdate">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 8.02.2023 11:12:13
+
+function OnAfterSucceededPost(sender,ev)
+{
+	if(BaseObject==null 
+	||BaseObject.CurrentRow==null
+	||BaseObject.CurrentRow.Row==null
+	||BaseObject.CurrentRow.Row.IsNull("RecId")	
+	)
+	return null;
+		rec_id=BaseObject.CurrentRow.Row["RecId"].ToString();
+			foreach(dr in BaseObject.Data.Tables["MA_WorkOrderItem"].Select("WorkOrderSubType=2 and ParentItemId is null and RecId is not null "))
+			{	UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,"update MA_WorkOrderItem set UD_DeadLineDate=Convert(datetime,DepartureDate)+70 where RecId="+dr["RecId"].ToString());			}
+		BaseObject.Get(rec_id);
+}
+
+</ScriptText>
+</ScriptDefinition>

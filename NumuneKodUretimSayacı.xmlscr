@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneKodUretimSayacı" Enabled="true" Priority="0" ScriptName="NumuneKodUretimSayacı">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 19.10.2023 09:54:24 NumuneKodUretimSayacı
+gLock = false;
+function OnBeforePost(sender,ev)
+{
+	if(BaseObject == null 
+	    || BaseObject.CurrentRow == null
+	    || BaseObject.CurrentRow.Row == null
+		|| BaseObject.CurrentRow.Row.IsNull("InventoryType")
+		|| BaseObject.CurrentRow.Row.IsNull("IsSample")
+		|| BaseObject.CurrentRow.Row.IsNull("GroupId")
+		|| Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) != 1	 
+		|| Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) != 100)
+			return null;
+			
+	if(BaseObject.CurrentRow.Row.IsNull("IsSample") || Convert.ToInt32(BaseObject.CurrentRow.Row["UD_CounterControl"]) == 1)
+		return null;
+				
+		query = "select max(isnull(I.UD_Counter,0)) [num] from IM_Item I with (nolock) where isnull(I.GroupId,0)=\'"+Convert.ToInt32(BaseObject.CurrentRow.Row["GroupId"])+"\'";
+	//	MessageBox.Show(query.ToString());
+		dt=UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+        if(dt == null || dt.Rows.Count &lt;= 0)
+			    return null; 
+      
+        
+	 	BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Counter",Convert.ToInt32(dt.Rows[0]["num"])+1);
+	 	
+       // MessageBox.Show("test");	
+	 	BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_CounterControl",1);
+	 //	MessageBox.Show("test2");
+}
+</ScriptText>
+</ScriptDefinition>

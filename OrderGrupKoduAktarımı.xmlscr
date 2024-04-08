@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderGrupKoduAktarımı" Enabled="true" Priority="0" ScriptName="OrderGrupKoduAktarımı">
+  <Events>
+    <Event Enabled="true" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="OrderReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 5.05.2023 08:45:44
+/*
+Kumaş planlama üzerinden atın alma siparişlerinde ve Fason talimatlarında açılan özel alana orderin grup kodunu aktarmaktadır.
+*/
+function OnBeforePost (sender,eventArg)
+{
+	if(BaseObject == null 
+	|| BaseObject.CurrentRow == null 
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("ReceiptType") 
+	|| (Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) != 1 &amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) != 3) )
+		return null;
+	
+		foreach (dr in BaseObject.Data.Tables["IM_ItemAllocation"].Select("WorkOrderItemId is not null"))
+			
+			{
+				//query = " select string_agg(isnull(WO.WorkOrderGroupCode,\'\')+\' || \'+isnull(WO.WorkOrderNo,\'\'),\'\') [ogc] from MA_WorkOrder WO with (nolock)  ";
+				query = " select isnull(WO.WorkOrderGroupCode,\'\') [ogc] from MA_WorkOrder WO with (nolock)  ";
+                query += " left join MA_WorkOrderItem WOI with (nolock) on WOI.WorkOrderId=WO.RecId ";
+				query += " where WOI.RecId in (\'"+dr["WorkOrderItemId"].ToString()+"\')";
+				dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",query);
+					
+					if(dt==null || dt.Rows.Count&lt;0)
+					 return null;
+					foreach (drr in BaseObject.Data.Tables["IM_OrderReceiptItem"].Select("RecId is not null"))
+						{
+							drr.SetField&lt;|string|&gt;("UD_WorkOrderGroupCode",dt.Rows[0]["ogc"].ToString());
+						}
+			}
+			
+}</ScriptText>
+</ScriptDefinition>

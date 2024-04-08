@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PLMOrderdanNormalOrderaAlanTasima" Enabled="true" Priority="0" ScriptName="PLMOrderdanNormalOrderaAlanTasima">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChanged" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 8.03.2023 11:30:27 PLMOrderdanNormalOrderaAlanTasima
+function OnColumnChanged(sender, e)
+{   	
+    if(BaseObject!=null 
+	&amp;&amp; BaseObject.CurrentRow!=null 
+	&amp;&amp; BaseObject.CurrentRow.Row!=null 
+	&amp;&amp; !BaseObject.CurrentRow.Row.IsNull("IsSample")
+	&amp;&amp; !BaseObject.CurrentRow.Row.IsNull("UD_ControlTasima")	
+	&amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["UD_ControlTasima"])==0
+	&amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"])==1) 
+	{
+		if(e.Row.Table.TableName == "MA_WorkOrder" 
+		&amp;&amp; e.Column.ColumnName == "UD_TasinacakPLMOrderNo" 
+		&amp;&amp; (!e.Row.IsNull("UD_TasinacakPLMOrderNo") &amp;&amp; e.Row["UD_TasinacakPLMOrderNo"].ToString()!=""))
+		   {
+		   sb = new StringBuilder();
+		   sb2 = new StringBuilder();
+		   sb.Clear();
+		   
+		   sb.AppendLine("select isnull(DF.FieldName,\'\') [field_name] ,isnull(DF.DataType,0) [dty] from MD_DataField DF with (nolock) where isnull(DF.FieldName,\'\') != \'"+e.Column.ColumnName+"\' and DF.TableName=\'MA_WorkOrder\'");
+		  // MessageBox.Show(sb.ToString());
+		   dt_sb = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb",sb.ToString());
+           if(dt_sb != null || dt_sb.Rows.Count &gt; 0)
+              {
+	              for(i = 0;i &lt; dt_sb.Rows.Count; i++)
+	              {
+	               	hucre_adi = dt_sb.Rows[i]["field_name"].ToString();
+	               	data_type = dt_sb.Rows[i]["dty"].ToString().Trim();
+	               	if(data_type.ToString() == "23" || data_type.ToString() == "9" )
+	               	{
+	               		i_null = "0";
+	               	}
+	               	else
+	               	{
+	               		i_null = "\'\'";
+	               	}
+	               	sb2.Clear();
+	               	sb2.AppendLine("select isnull(WO."+hucre_adi+","+i_null.ToString()+") [tasinan_alan] from MA_WorkOrder WO with (nolock) where WO.IsSample=1 and WO.WorkOrderNo=\'"+e.Row["UD_TasinacakPLMOrderNo"].ToString()+"\'");
+	               	//MessageBox.Show(sb2.ToString());
+	               	dt_sb2 = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb2",sb2.ToString());
+	               	if(dt_sb2 != null &amp;&amp; dt_sb2.Rows.Count &gt; 0)
+	               	{
+						tasinan_alan_ = dt_sb2.Rows[0]["tasinan_alan"].ToString();
+						if(data_type.ToString() == "9" )
+							{							
+						//	MessageBox.Show(tasinan_alan_.ToString().Replace(",","."));		
+						
+								e.Row.SetField&lt;|string|&gt;(hucre_adi,tasinan_alan_.ToString().Replace(".",","));
+							}
+						else if(data_type.ToString() == "23" )
+							{								
+								e.Row.SetField&lt;|int|&gt;(hucre_adi,Convert.ToInt32(tasinan_alan_));
+							} 
+						else
+							{
+								e.Row.SetField&lt;|string|&gt;(hucre_adi,tasinan_alan_);
+							}
+							e.Row.SetField&lt;|int|&gt;("UD_ControlTasima",1);  		
+	               	}
+	               	
+	              }
+	             	
+              }          
+	
+		   }
+	}
+	
+}
+</ScriptText>
+</ScriptDefinition>

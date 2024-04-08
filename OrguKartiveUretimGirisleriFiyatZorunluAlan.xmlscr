@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrguKartiveUretimGirisleriFiyatZorunluAlan" Enabled="true" Priority="0" ScriptName="OrguKartiveUretimGirisleriFiyatZorunluAlan">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderCuttingProductionEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderCuttingProductionEN" />
+    <Event Enabled="true" ObjectName="TWorkOrderProductionEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderProductionEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 3.02.2016 15:05:51 OrguKartiveUretimGirisleriFiyatZorunluAlan
+function OnBeforePost(sender,eventArg)
+{
+if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("InOut")
+    || BaseObject.CurrentRow.Row.IsNull("ProcessId")
+    //|| Convert.ToInt16(BaseObject.CurrentRow.Row["ProcessId"]) != 1
+    || Convert.ToInt16(BaseObject.CurrentRow.Row["InOut"]) == 0)
+       	return null;
+       	//UnitPrice
+    if(BaseObject.CurrentRow.Row.IsNull("UnitPrice") || Convert.ToDecimal(BaseObject.CurrentRow.Row["UnitPrice"])  == 0m)
+                    {
+                        BaseObject.ShowMessage("Fiyat alanı boş olamaz");
+                        eventArg.Cancel = true;
+                        return null;
+                    }
+}
+
+</ScriptText>
+</ScriptDefinition>

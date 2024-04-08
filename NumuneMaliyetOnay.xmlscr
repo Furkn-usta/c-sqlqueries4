@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneMaliyetOnay" Enabled="true" Priority="0" ScriptName="NumuneMaliyetOnay">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+    <Event Enabled="true" ObjectName="InventoryVM" />
+    <Event Enabled="true" EventName="BeforeCommandExecution" FunctionName="OnBeforeCommandExecution" ObjectName="InventoryVM" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 6.10.2023 09:42:48
+
+function OnBeforePost(sender, e)
+ {
+	if (BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null || BaseObject.CurrentRow.Row["IsSample"].ToString()=="0"  )
+		return null;
+		
+				
+ 
+	if(BaseObject.IsNewRecord)
+ 		BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Maliyet",0);
+
+	
+}
+
+
+function OnBeforeCommandExecution(sender, ev)
+{
+if(BaseObject.ActiveEntity == null 
+	|| BaseObject.ActiveEntity.CurrentRow == null 
+	|| BaseObject.ActiveEntity.CurrentRow.Row == null
+	|| ev.CommandName!="CreateInitialCostCommand")
+	return null;
+		
+	if (Convert.ToInt32(BaseObject.ActiveEntity.CurrentRow.Row["UD_Maliyet"]) == 0)
+{
+    BaseObject.ActiveEntity.ShowMessage("Maliyet Onayı Olmadan Maliyet Çalışması Gerçekleştirilemez", "Uyarı" );
+    ev.Cancel = true;
+    return null;
+}
+
+		
+
+}
+ </ScriptText>
+</ScriptDefinition>

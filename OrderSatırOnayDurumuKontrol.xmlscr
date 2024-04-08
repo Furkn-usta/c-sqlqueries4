@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderSatırOnayDurumuKontrol" Enabled="true" Priority="0" ScriptName="OrderSatırOnayDurumuKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderProductionEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="TWorkOrderProductionEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 29.09.2023 09:54:27 OrderSatırOnayDurumuKontrol
+
+function OnAfterSucceededPost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+		return null;
+	if(BaseObject.CurrentRow.Row.IsNull("ProductionType") 
+	|| BaseObject.CurrentRow.Row.IsNull("WorkOrderItemId")
+	|| BaseObject.CurrentRow.Row.IsNull("InOut")
+	)
+		return null;
+			
+		wopq = "SELECT * FROM MA_WorkOrderProduction WHERE WorkOrderItemId=" + BaseObject.CurrentRow.Row["WorkOrderItemId"].ToString();
+	     wopr = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "wopr", wopq);
+		
+	
+		if(wopr == null || wopr.Rows.Count &lt;= 0)
+			return null; 
+			
+	    	foreach( wop in wopr.Rows )
+		{      
+	       query= " select (select isnull(WOII.UD_AprovedStatus,0) [as] from MA_WorkOrderItem WOII  with (nolock) where WOII.WorkOrderId=WOI.WorkOrderId and WOII.ParentItemId is null and WOII.WorkOrderSubType=2 and WOII.SubNo=\'"+wop["SubNo"].ToString()+"\') [as] ";
+	       query += " , (select isnull(WOII.OperationCode,\'\') [oc] from MA_WorkOrderItem WOII  with (nolock) where WOII.WorkOrderId=WOI.WorkOrderId and WOII.ParentItemId is null and WOII.WorkOrderSubType=2 and WOII.SubNo=\'"+wop["SubNo"].ToString()+"\') [oc]";
+	       query += "from MA_WorkOrderItem WOI with (nolock) left join MA_WorkOrderProduction WOP with (nolock) on WOP.WorkOrderItemId=WOI.RecId ";
+	       query += "where WOI.RecId=\'"+wop["WorkOrderItemId"].ToString()+"\' and WOP.InOut=1  and WOP.RecId=\'"+wop["RecId"].ToString()+"\'";
+		  // MessageBox.Show(query.ToString());
+		   dt = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "dt", query);
+		    
+			if(dt == null || dt.Rows.Count &lt;= 0)
+				return null; 
+			 as_ = dt.Rows[0]["as"].ToString();	
+			 oc_ = dt.Rows[0]["oc"].ToString();	
+			  
+			if(Convert.ToInt32(as_) == 0)
+				{
+						sender.ShowMessage(oc_.ToString() + " Rengi Onaysız Dikkat");
+				}		
+	    }
+    }
+
+
+	</ScriptText>
+</ScriptDefinition>

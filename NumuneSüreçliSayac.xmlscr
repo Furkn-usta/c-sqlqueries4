@@ -1,0 +1,160 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneSüreçliSayac" Enabled="true" Priority="0" ScriptName="NumuneSüreçliSayac">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnProcessBeforePost" ObjectName="InventoryEN" />
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnCopyBeforePost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 11.05.2023 09:45:10
+/*
+Numune kartında açılan özel alanlara numune kart sayacı oluşturmaktadır. Numune kartlarında süreç oluşturuldukça her kartın içerisinde kendi sürecini belirten sayaç artarak devam edecektir.
+*/
+copy_status ="";
+function OnBeforePost(sender,ev)
+{
+	if (BaseObject == null 
+	|| BaseObject.CurrentRow == null
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("InventoryType")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) != 100
+	|| BaseObject.CurrentRow.Row.IsNull("UD_Control")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["UD_Control"]) == 1
+	|| BaseObject.CurrentRow.Row.IsNull("IsSample")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) != 1)
+		return null;
+		
+		global:copy_status = BaseObject.IsCopyEntity.ToString();
+		MessageBox.Show(global:copy_status);
+		
+		query = "select max(isnull(INV.UD_Sayac,\'0\'))[syc]  from IM_Item INV with (nolock) where INV.IsSample=1 and INV.InventoryType=100";
+		dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query);
+		 if(dt==null || dt.Rows.Count&lt;0)
+		return null;
+		
+		if(Convert.ToInt32(dt.Rows[0]["syc"]) == 0)		
+		{
+			BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac","0001");
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control",1);
+		}
+		else 
+		{
+		  if(Convert.ToInt32(dt.Rows[0]["syc"])&gt;= 1 &amp;&amp; Convert.ToInt32(dt.Rows[0]["syc"]) &lt; 9)
+          {
+            syc_ = Convert.ToInt32(dt.Rows[0]["syc"])+1;
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac","000"+syc_.ToString());
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control",1);
+          }
+          else if (Convert.ToInt32(dt.Rows[0]["syc"])&gt;= 9 &amp;&amp; Convert.ToInt32(dt.Rows[0]["syc"]) &lt; 99)
+          {
+            syc_ = Convert.ToInt32(dt.Rows[0]["syc"])+1;
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac","00"+syc_.ToString());
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control",1);
+          }
+          else if (Convert.ToInt32(dt.Rows[0]["syc"])&gt;= 99 &amp;&amp; Convert.ToInt32(dt.Rows[0]["syc"]) &lt; 999)
+          {
+            syc_ = Convert.ToInt32(dt.Rows[0]["syc"])+1;
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac","0"+syc_.ToString());
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control",1);
+          }
+          else
+          {
+            syc_ = Convert.ToInt32(dt.Rows[0]["syc"])+1;
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac",syc_.ToString());
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control",1);
+          }
+
+		}
+	
+}
+
+
+function OnCopyBeforePost(sender,ev)
+{
+	if (BaseObject == null 
+	|| BaseObject.CurrentRow == null
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("InventoryType")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) != 100
+	
+	|| BaseObject.CurrentRow.Row.IsNull("UD_Control2")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["UD_Control2"]) == 1
+	
+	|| !BaseObject.IsCopyEntity
+	|| BaseObject.CurrentRow.Row.IsNull("IsSample")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) != 1)
+		return null;
+		
+		global:copy_status = BaseObject.IsCopyEntity.ToString();
+	//	MessageBox.Show(global:copy_status);
+		
+		query = "select max(isnull(INV.UD_Sayac,\'0\'))[syc]  from IM_Item INV with (nolock) where INV.IsSample=1 and INV.InventoryType=100";
+		dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query);
+		 if(dt==null || dt.Rows.Count&lt;0)
+		return null;
+		
+		if(Convert.ToInt32(dt.Rows[0]["syc"]) == 0)		
+		{
+			BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac","0001");
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control2",1);
+		}
+		else 
+		{
+		  if(Convert.ToInt32(dt.Rows[0]["syc"])&gt;= 1 &amp;&amp; Convert.ToInt32(dt.Rows[0]["syc"]) &lt; 9)
+          {
+            syc_ = Convert.ToInt32(dt.Rows[0]["syc"])+1;
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac","000"+syc_.ToString());
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control2",1);
+          }
+          else if (Convert.ToInt32(dt.Rows[0]["syc"])&gt;= 9 &amp;&amp; Convert.ToInt32(dt.Rows[0]["syc"]) &lt; 99)
+          {
+            syc_ = Convert.ToInt32(dt.Rows[0]["syc"])+1;
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac","00"+syc_.ToString());
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control2",1);
+          }
+          else if (Convert.ToInt32(dt.Rows[0]["syc"])&gt;= 99 &amp;&amp; Convert.ToInt32(dt.Rows[0]["syc"]) &lt; 999)
+          {
+            syc_ = Convert.ToInt32(dt.Rows[0]["syc"])+1;
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac","0"+syc_.ToString());
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control2",1);
+          }
+          else
+          {
+            syc_ = Convert.ToInt32(dt.Rows[0]["syc"])+1;
+            BaseObject.CurrentRow.Row.SetField&lt;|string|&gt;("UD_Sayac",syc_.ToString());
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Control2",1);
+          }
+
+		}
+}
+
+function OnProcessBeforePost(sender,ev)
+{
+	if (BaseObject == null 
+	|| BaseObject.CurrentRow == null
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("InventoryType")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["InventoryType"]) != 99
+    || BaseObject.CurrentRow.Row.IsNull("PreviousStyleCardId")
+	|| BaseObject.CurrentRow.Row.IsNull("IsSample")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) != 1)
+		return null;
+
+        query = "select isnull(max(isnull(INV.UD_CostCounter,0)),0) [syc_2] from IM_Item INV with (nolock) where INV.IsSample=1 and INV.InventoryType=99 and INV.RecId="+Convert.ToInt32(BaseObject.CurrentRow.Row["PreviousStyleCardId"]);
+		dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt", query);
+	 	if(dt==null || dt.Rows.Count&lt;0)
+		return null;
+        
+        if(Convert.ToInt32(dt.Rows[0]["syc_2"]) == 0)		
+		{
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_CostCounter",1);
+		}
+		else 
+		{
+			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_CostCounter",Convert.ToInt32(dt.Rows[0]["syc_2"])+1);
+		}
+}</ScriptText>
+</ScriptDefinition>

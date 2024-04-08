@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderBaşlıgaStandartCariAktarımı" Enabled="true" Priority="0" ScriptName="OrderBaşlıgaStandartCariAktarımı">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 7.08.2023 16:59:00	OrderBaşlıgaStandartCariAktarımı	OrderBaşlıgaStandartCariAktarımı	0	True
+
+function OnBeforePost(sender,ev)
+{
+    if (BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null)
+		return null;
+		
+		BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("CurrentAccountId",234);
+}</ScriptText>
+</ScriptDefinition>

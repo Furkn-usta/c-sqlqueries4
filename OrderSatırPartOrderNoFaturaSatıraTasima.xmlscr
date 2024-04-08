@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderSatırPartOrderNoFaturaSatıraTasima" Enabled="true" Priority="0" ScriptName="OrderSatırPartOrderNoFaturaSatıraTasima">
+  <Events>
+    <Event Enabled="true" ObjectName="InvoiceEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InvoiceEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 5.01.2024 16:56:23 OrderSatırPartOrderNoFaturaSatıraTasima
+function OnBeforePost(sender, ev)
+{
+ if(BaseObject == null 
+ 	|| BaseObject.CurrentRow == null 
+ 	|| BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("ReceiptType")
+    //|| Convert.ToInt16(BaseObject.CurrentRow.Row["ReceiptType"]) != 120
+    )
+        return null;
+
+     			sb = new StringBuilder();
+                foreach(ri in BaseObject.Data.Tables["IM_ReceiptItem"].Select("PackagingListItemId is not null"))
+                {
+                    sb.Clear();
+                    sb.AppendLine(" select isnull(WOI.PartOrderNo,\'\') [pio] from MA_WorkOrderItem WOI with (nolock) where isnull(WOI.RecId,0)=(select isnull(PLI.WorkOrderItemId,0) ");
+                    sb.AppendLine("from IM_PackagingListItem PLI with (nolock) where isnull(PLI.RecId,0)=\'"+ri["PackagingListItemId"].ToString()+"\')");
+                   // MessageBox.Show(sb.ToString());
+                    dt_sb = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt_sb",sb.ToString());
+                    
+                     if(dt_sb == null || dt_sb.Rows.Count &lt;= 0)
+                        return null;
+
+                    pio_ = dt_sb.Rows[0]["pio"].ToString();
+                    ri.SetField&lt;|string|&gt;("UD_EInvoiceItemExplanation","##"+pio_.ToString()+"###");        
+                }
+
+}</ScriptText>
+</ScriptDefinition>

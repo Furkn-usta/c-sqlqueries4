@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderKapaliMail" Enabled="false" Priority="0" ScriptName="OrderKapaliMail">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 27.01.2023 16:10:18
+
+function OnBeforePost(sender,eventArg)
+{
+status_="";
+    if(BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("Status")
+    || BaseObject.CurrentRow.Row.IsNull("IsClosed")
+    || BaseObject.ActiveSession.Company.RecId!=3)
+		return null;
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["IsClosed"])==1)
+		{
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==1)
+		status_="Planlandi";
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==2)
+		status_="Başladi - Çalişiyor";
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==3)
+		status_="Durduruldu";
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==4)
+		status_="İptal Edildi";
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==5)
+		status_="Tamamlandi";
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==98)
+		status_="Acil";
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==96)
+		status_="Hazir";
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==97)
+		status_="Tedarik Bekliyor";
+		if(Convert.ToInt32(BaseObject.CurrentRow.Row["Status"])==99)
+		status_="Planlandi";
+		taskm=BaseObject.Container.Resolve&lt;|TaskMessageService|&gt;("TaskMessageService");
+		kayitEden=BaseObject.ActiveSession.User.UserCode.ToString()+" "+BaseObject.ActiveSession.User.UserName.ToString();
+		mailMessage=BaseObject.CurrentRow.Row["WorkOrderNo"].ToString()+" nolu order, "+kayitEden+" tarafindan durumu değiştirilmiştir."+" Durum Bilgisi:"+status_;
+		taskm.SendEmail("fahrettin.koca@unlu.com",BaseObject.CurrentRow.Row["WorkOrderNo"].ToString()+" Durumu",mailMessage);
+		}
+
+	}
+</ScriptText>
+</ScriptDefinition>

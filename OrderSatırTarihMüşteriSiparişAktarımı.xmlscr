@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderSatırTarihMüşteriSiparişAktarımı" Enabled="true" Priority="0" ScriptName="OrderSatırTarihMüşteriSiparişAktarımı">
+  <Events>
+    <Event Enabled="true" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="OrderReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 9.10.2023 09:24:16 OrderSatırTarihMüşteriSiparişAktarımı
+/*
+
+*/
+function OnBeforePost(sender,ev)
+{
+    if (BaseObject == null 
+    || BaseObject.CurrentRow == null 
+    || BaseObject.CurrentRow.Row == null
+    || BaseObject.CurrentRow.Row.IsNull("ReceiptType")
+    || Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) != 1    
+    )
+    return null;
+
+    foreach(pli in BaseObject.Data.Tables["IM_ItemAllocation"].Select("OrderReceiptItemId is not null and WorkOrderItemId is not null and InventoryVariantId is not null and RequirementGroup is not null")) 
+                {
+                //alloc_quant_m = "Tahsis Miktarı="+pli["Quantity"].ToString();
+                alloc_inven_rec = pli["OrderReceiptItemId"].ToString().Trim();
+
+                query = " select isnull(VI.ItemName,\'\') [in] from IM_ItemVariant IV with (nolock)";
+                query += " left join IM_VariantItem VI with (nolock) on VI.RecId=IV.Variant1Id";
+                query += "  where IV.RecId=\'"+pli["InventoryVariantId"].ToString()+"\'";
+
+                 l_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "l_dt",query.ToString());
+                  
+                  if(l_dt == null || l_dt.Rows.Count &lt;=0)
+           	        return null;
+                  in_ = l_dt.Rows[0]["in"].ToString();
+                
+    foreach(ri in BaseObject.Data.Tables["IM_OrderReceiptItem"].Select("RecId is not null")) 
+                {
+                row_rec = ri["RecId"].ToString().Trim();
+                //row_quant_m = "Satır Miktarı="+ri["Quantity"].ToString();   
+
+                if(alloc_inven_rec == row_rec)
+ 				          	  {
+                        sb = new StringBuilder();
+                        sb.Clear();
+                        sb.AppendLine(" select cast(dateadd(day,40,isnull(WOI.DepartureDate,\'\')) as date) [dd] from MA_WorkOrder WO with (nolock)");
+                        sb.AppendLine(" left join MA_WorkOrderItem WOI with (nolock) on WOI.WorkOrderId=WO.RecId");
+                        sb.AppendLine(" where WO.RecId = (select W.RecId from MA_WorkOrder W with (nolock) left join MA_WorkOrderItem WOII with (nolock) on WOII.WorkOrderId=W.RecId");
+                        sb.AppendLine(" where WOII.RecId=\'"+pli["WorkOrderItemId"].ToString()+"\')  and WOI.WorkOrderSubType=2 and WOI.ParentItemId is null and WOI.OperationCode=\'"+in_.ToString()+"\' and WOI.RequirementGroup=\'"+pli["RequirementGroup"].ToString()+"\' ");
+			            sb_dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "sb_dt",sb.ToString());
+                  
+		                  if(sb_dt == null || sb_dt.Rows.Count &lt;=0)
+		           	        return null;   
+		           	          dd_ = sb_dt.Rows[0]["dd"].ToString();
+		           	      ri.SetField&lt;|string|&gt;("DeliveryDate",dd_.ToString());                    
+                      }
+                }
+}
+}</ScriptText>
+</ScriptDefinition>

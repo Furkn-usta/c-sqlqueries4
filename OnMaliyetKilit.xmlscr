@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Ön maliyet kilitleme" Enabled="true" Priority="0" ScriptName="OnMaliyetKilit">
+  <Events>
+    <Event Enabled="true" ObjectName="InitialCostEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InitialCostEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="InitialCostEN" />
+  </Events>
+  <Histories />
+  <ScriptText>/* AfterSucceededPost OnAfterSucceededPost
+18.11.2021 Demka - Ali Bey
+Ön maliyeti order girildiğinde otomatik kilitleme
+*/
+
+gIsShouldLock = 0;
+
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+		return null;
+	
+	if(string.IsNullOrWhiteSpace(BaseObject.CurrentRow.Row["WorkOrderId"]))
+		return null;
+	 
+	 global:gIsShouldLock = 1;
+	 if(BaseObject.CurrentRow.Row.HasVersion(DataRowVersion.Original) &amp;&amp; BaseObject.CurrentRow.Row["IsLocked", DataRowVersion.Original] != BaseObject.CurrentRow.Row["IsLocked", DataRowVersion.Current])
+		global:gIsShouldLock = 0;
+}
+
+function OnAfterSucceededPost(sender, ev)
+{
+	if( BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+		return null;
+		
+	if(global:gIsShouldLock == 1)
+		UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection, null, "UPDATE MA_InitialCost SET LockedAt=GETDATE(), IsLocked=1, LockedBy=" + BaseObject.ActiveSession.User.RecId.ToString() + " WHERE RecId=" + BaseObject.CurrentRow.Row["RecId"]);
+}</ScriptText>
+</ScriptDefinition>

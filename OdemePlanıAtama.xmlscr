@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OdemePlanıAtama" Enabled="true" Priority="0" ScriptName="OdemePlanıAtama">
+  <Events>
+    <Event Enabled="true" ObjectName="InvoiceEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InvoiceEN" />
+  </Events>
+  <Histories>
+    <History EditedBy="FurkanUsta" EntryDate="2023-04-26T00:00:00">
+      <Change>Sadece x yerine yazılan şirkette ve 120 tip faturada çalışır. Ödeme planına 2 RecIdli veriyi atar. select * from FI_PaymentPlan FPP with (nolock) ile ödeme planının RecIdsi öğrenilebilir.
+</Change>
+    </History>
+  </Histories>
+  <ScriptText>//Generated on 26.04.2023 16:22:12
+/*
+Sadece x yerine yazılan şirkette ve 120 tip faturada çalışır. Ödeme planına 2 RecIdli veriyi atar. select * from FI_PaymentPlan FPP with (nolock) ile ödeme planının RecIdsi öğrenilebilir.
+*/
+function OnBeforePost (sender, eventArg)
+{
+	if (BaseObject == null 
+		|| BaseObject.Name != "InvoiceEN" 
+		|| BaseObject.CurrentRow == null 
+		|| BaseObject.CurrentRow.Row == null
+        || Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) != 120)
+		return null;
+		
+		if(BaseObject.ActiveSession.Company.RecId == x)
+		{	BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("PaymentPlanId",2);	}
+}
+</ScriptText>
+</ScriptDefinition>

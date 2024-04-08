@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="PartiLotNoKontrol" Enabled="false" Priority="0" ScriptName="PartiLotNoKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>function OnBeforePost(sender, eventArg)
+{
+	if(BaseObject!=null &amp;&amp; BaseObject.CurrentRow!=null &amp;&amp; BaseObject.CurrentRow.Row!=null &amp;&amp; Convert.ToInt32(BaseObject.CurrentRow.Row["InWarehouseId"])==93 &amp;&amp; (Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"])==6 || Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"])==1))
+	{
+		if(BaseObject.Data.Tables["IM_ReceiptItem"].Columns.Contains("PartyNo")) 
+		{
+			itemRows=BaseObject.Data.Tables["IM_ReceiptItem"].Select("InventoryId is not null");
+			if(itemRows!=null &amp;&amp; itemRows.Length&gt;0)
+			{
+				foreach(itemRow in itemRows)
+				{
+					if( System.String.IsNullOrWhiteSpace(itemRow["PartyNo"].ToString()) || System.String.IsNullOrEmpty(itemRow["PartyNo"].ToString()))
+					{
+						BaseObject.ShowMessage("Lütfen satirlarda Parti (Lot) No alanini boş geçmeyin. {src:PartiLotNoKontrol}");
+						eventArg.Cancel = true;
+						return null;
+					}
+				}
+			}
+		}
+		 if(BaseObject.Data.Tables["IM_ReceiptItem"].Columns.Contains("UD_LotNo")) 
+		{
+			itemRows=BaseObject.Data.Tables["IM_ReceiptItem"].Select("InventoryId is not null");
+			if(itemRows!=null &amp;&amp; itemRows.Length&gt;0)
+			{
+				foreach(itemRow in itemRows)
+				{
+					if( System.String.IsNullOrWhiteSpace(itemRow["UD_LotNo"].ToString()) || System.String.IsNullOrEmpty(itemRow["UD_LotNo"].ToString()))
+					{
+						BaseObject.ShowMessage("Lütfen satirlarda Lot No alanini boş geçmeyin. {src:PartiLotNoKontrol}");
+						eventArg.Cancel = true;
+						return null;
+					}
+				}
+			}
+		}
+	}
+}</ScriptText>
+</ScriptDefinition>

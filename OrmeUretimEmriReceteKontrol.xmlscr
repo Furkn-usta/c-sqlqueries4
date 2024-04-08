@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Orme Uretim Emri Recete Kontrol" Enabled="true" Priority="0" ScriptName="OrmeUretimEmriReceteKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="WorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="WorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 21.02.2022 12:07:51
+
+
+function OnBeforePost(sender, ev) {
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null || BaseObject.CurrentRow.Row.IsNull("WorkOrderType") || Convert.ToInt32(BaseObject.CurrentRow.Row["WorkOrderType"]) != 3
+		|| !BaseObject.Data.Tables.Contains("MA_WorkOrderItem"))
+		return null;
+		
+	recipeId = "";
+	if(!BaseObject.CurrentRow.Row.IsNull("RecipeId"))
+		recipeId = BaseObject.CurrentRow.Row["RecipeId"].ToString();
+		
+	isChanged = false;
+	if(BaseObject.CurrentRow.Row.HasVersion(DataRowVersion.Original) &amp;&amp; BaseObject.CurrentRow.Row["RecipeId", DataRowVersion.Original] != BaseObject.CurrentRow.Row["RecipeId", DataRowVersion.Current])
+		isChanged = true;
+		
+	if(!isChanged)
+		return null;
+
+	wois = BaseObject.Data.Tables["MA_WorkOrderItem"].Select("OrderItemId &gt; 0 and WorkOrderSubType = 2");
+	if(wois.Length &lt;= 0)
+		return null;
+		
+	foreach(woi in wois)
+	{
+		ori = woi["OrderItemId"].ToString();
+		q = "SELECT COUNT(ORI.RecId) Num FROM IM_OrderReceiptItem ORI with(nolock) WHERE ORI.RecipeId = "+recipeId+" AND ORI.RecId = " + ori;
+
+	    r = UtilityFunctions.GetDataTableList(BaseObject.ActiveSession.DBInfo.DBProvider, BaseObject.ActiveSession.DBInfo.Connection, null, "r", q);
+	
+	    if (r == null || r.Rows.Count &lt;= 0)
+	        return null;
+	   
+	   if(Convert.ToInt32(r.Rows[0]["Num"]) &lt;= 0)
+	   {
+	   		BaseObject.ShowMessage("Başliktaki reçete bilgisi talimatlarda bulunamadi. {scr:OrmeUretimEmriReceteKontrol}");
+	   		ev.Cancel = true;
+	   		return null;
+	   }
+	}
+}</ScriptText>
+</ScriptDefinition>

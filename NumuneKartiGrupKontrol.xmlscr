@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="NumuneKartiGrupKontrol" Enabled="true" Priority="0" ScriptName="NumuneKartiGrupKontrol">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 6.02.2024 11:03:02 NumuneKartiGrupKontrol
+
+//glFields = array("InventoryName","Numune Adı","CurrentAccountCode","Müşteri Kodu","SpecialCode","Takip Kodu","RepresentativeCode","Sorumlu");
+function OnBeforePost(sender, ev)
+{
+	if(BaseObject == null 
+        //|| !BaseObject.IsNewRecord 
+	|| BaseObject.Data == null 
+	|| BaseObject.Data.Tables == null
+	|| BaseObject.CurrentRow == null 
+	|| BaseObject.CurrentRow.Row == null 
+/*	|| BaseObject.CurrentRow.Row.IsNull("IsSample")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["IsSample"]) != 1*/)
+		return null;
+
+	if(!BaseObject.CurrentRow.Row.IsNull("AccessCode") &amp;&amp; BaseObject.CurrentRow.Row["AccessCode"].ToString()=="FABRIC")
+		return null;
+		
+        if(BaseObject.ActiveSession.User.RecId != 1)
+                return null;
+
+    
+      
+                if(BaseObject.ActiveSession.Company.RecId == 1)
+                {        
+                        if(!BaseObject.CurrentRow.Row.IsNull("GroupId") &amp;&amp; (BaseObject.CurrentRow.Row["GroupId"].ToString().Trim() == "56" || BaseObject.CurrentRow.Row["GroupId"].ToString().Trim() == "9"  ))
+                        {
+                                BaseObject.ShowMessage("Grup Kodu alanında Dokuma Örme Seçilemez. {scr:NumuneKartiGrupKontrol}");
+                                ev.Cancel = true;
+                                return null;
+                        }
+                }
+                
+                if(BaseObject.ActiveSession.Company.RecId == 2)
+                {        
+                        if(!BaseObject.CurrentRow.Row.IsNull("GroupId") &amp;&amp; (BaseObject.CurrentRow.Row["GroupId"].ToString().Trim() == "55" || BaseObject.CurrentRow.Row["GroupId"].ToString().Trim() == "8"  ))
+                        {
+                                BaseObject.ShowMessage("Grup Kodu alanında Dokuma Örme Seçilemez. {scr:NumuneKartiGrupKontrol}");
+                                ev.Cancel = true;
+                                return null;
+                        }
+                }
+	
+}</ScriptText>
+</ScriptDefinition>

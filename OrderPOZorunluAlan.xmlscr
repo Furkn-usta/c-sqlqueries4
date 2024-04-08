@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OrderPOZorunluAlan" Enabled="true" Priority="0" ScriptName="OrderPOZorunluAlan">
+  <Events>
+    <Event Enabled="true" ObjectName="TWorkOrderEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="TWorkOrderEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 13.03.2024 09:22:04 OrderPOZorunluAlan
+function OnBeforePost(sender, ev) 
+{
+	if(BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null)
+		return null;
+
+	if(BaseObject.CurrentRow.Row.IsNull("UD_POT") || Convert.ToDateTime(BaseObject.CurrentRow.Row["UD_POT"])  &lt;= new DateTime(1900, 1, 1))
+	{
+		BaseObject.ShowMessage("PO Tarihi boş olamaz");
+		ev.Cancel = true;
+		return null;
+	}
+}
+</ScriptText>
+</ScriptDefinition>

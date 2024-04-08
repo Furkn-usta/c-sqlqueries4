@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Parti No Atama" Enabled="true" Priority="0" ScriptName="PartiNoAtama">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryReceiptEN" />
+    <Event Enabled="true" EventName="ColumnChanged" FunctionName="OnColumnChange" ObjectName="InventoryReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 19 Oca 2021 23:56:57
+//Eğer herhangi bir Malzeme fişinin satirinda üretim emri no seçilirsen ve seçilen üretim emrine tahsis varsa 
+//tahsisteki parti no alani fişin satirina aktarilir.
+//Script malzeme fişi satirinda üretim emri seçildiğinde (OnColumnChange) devreye girer. 
+//Örme üretiminde otomatik sarfiyat yapildiğinda parti no alani sarf fişine gelmesi için yazildi.
+
+function OnColumnChange(sender, eventArg) 
+{
+	if (eventArg.Row.Table.TableName == "IM_ReceiptItem" &amp;&amp; eventArg.Column.ColumnName == "WorkOrderReceiptItemId")
+	{
+		if(!eventArg.Row.IsNull("WorkOrderReceiptItemId") &amp;&amp; !eventArg.Row.IsNull("InventoryId"))
+		{
+			woi = eventArg.Row["WorkOrderReceiptItemId"].ToString();
+			inv = eventArg.Row["InventoryId"].ToString();
+			
+			query =String.Format("select tiri.PartyNo from IM_ReceiptItem as tiri with (nolock) where tiri.RecId in (select top 1 alc.InventoryReceiptItemId from IM_ItemAllocation as alc with (nolock) where alc.WorkOrderItemId ={0} and alc.InventoryId = {1})",woi,inv);
+			dt =UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction,"dt",query);
+			if(dt != null &amp;&amp; dt.Rows.Count&gt;0 &amp;&amp; !String.IsNullOrEmpty(dt.Rows[0][0].ToString()))
+			{
+				
+				eventArg.Row.SetField&lt;|String|&gt;("PartyNo",dt.Rows[0][0].ToString());
+			}
+		}
+	}
+}</ScriptText>
+</ScriptDefinition>

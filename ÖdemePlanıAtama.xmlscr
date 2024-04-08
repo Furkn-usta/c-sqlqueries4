@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="ÖdemePlanıAtama" Enabled="true" Priority="0" ScriptName="ÖdemePlanıAtama">
+  <Events>
+    <Event Enabled="true" ObjectName="InvoiceEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InvoiceEN" />
+  </Events>
+  <Histories />
+  <ScriptText>//Generated on 23.02.2024 15:43:34 ÖdemePlanıAtama
+function OnBeforePost(sender, ev)
+{
+
+	if(BaseObject == null 
+	|| BaseObject.CurrentRow == null 
+	|| BaseObject.CurrentRow.Row == null
+	|| BaseObject.CurrentRow.Row.IsNull("ReceiptType")
+    || BaseObject.CurrentRow.Row.IsNull("CurrentAccountId")
+	|| Convert.ToInt32(BaseObject.CurrentRow.Row["ReceiptType"]) != 1)
+		return null;
+		
+        str1 ="select case when CurrentAccountCode like \'3%\' then \'300\' else \'100\' end tip from FI_Account F with (nolock) where F.RecId=\'"+BaseObject.CurrentRow.Row["CurrentAccountId"].ToString()+"\'";	    
+	     //MessageBox.Show(str1);
+	    dt1 = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt1",str1);	
+	   
+        if(dt1 != null  &amp;&amp; dt1.Rows.Count&gt;0 &amp;&amp; dt1.Rows[0]["tip"].ToString()=="300")
+        {
+            str="select isnull(UD_VadeGun,0) Vade from FI_PaymentPlan with (nolock) where RecId="+Convert.ToInt32(BaseObject.CurrentRow.Row["PaymentPlanId"]);	    
+            //MessageBox.Show(str);
+            dt = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "dt",str);	
+            if(dt!=null 
+            &amp;&amp; dt.Rows.Count&gt;0 
+            &amp;&amp; !dt.Rows[0].IsNull("Vade") 
+            &amp;&amp; Convert.ToInt32(dt.Rows[0]["Vade"])&gt;0)
+                BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("TermDay",Convert.ToInt32(dt.Rows[0]["Vade"]));
+        }
+}</ScriptText>
+</ScriptDefinition>

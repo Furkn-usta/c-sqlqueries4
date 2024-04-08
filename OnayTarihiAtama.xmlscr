@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="OnayTarihiAtama" Enabled="true" Priority="0" ScriptName="OnayTarihiAtama">
+  <Events>
+    <Event Enabled="true" ObjectName="InventoryEN" />
+    <Event Enabled="true" EventName="BeforePost" FunctionName="OnBeforePost" ObjectName="InventoryEN" />
+  </Events>
+  <Histories />
+  <ScriptText>function OnBeforePost (sender,eventArg)
+{
+		if(BaseObject!=null &amp;&amp; BaseObject.CurrentRow!=null &amp;&amp; BaseObject.CurrentRow.Row!=null )
+		{
+				if(BaseObject.CurrentRow.Row["UD_Onay"].ToString()=="False")
+				{
+					if(BaseObject.CurrentRow.Row["UD_AraNumuneKalip"].ToString()=="True")
+      				{
+         			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_Onay",1);
+         			BaseObject.CurrentRow.Row.SetField&lt;|DateTime|&gt;("UD_OnayTarih",DateTime.Now);
+         			}
+       			}
+       			if(BaseObject.CurrentRow.Row["UD_OnayImalat"].ToString()=="False")
+       			{
+       				if(BaseObject.CurrentRow.Row["UD_ImalatKalip"].ToString()=="True")
+      				{
+         			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_OnayImalat",1);
+         			BaseObject.CurrentRow.Row.SetField&lt;|DateTime|&gt;("UD_OnayTarihImalat",DateTime.Now);
+         			}
+       		 	}
+       		 	if(BaseObject.CurrentRow.Row["UD_OnayProto"].ToString()=="False")
+       			{
+       				if(BaseObject.CurrentRow.Row["UD_ProtoKalip"].ToString()=="True" )
+      				{
+         			BaseObject.CurrentRow.Row.SetField&lt;|int|&gt;("UD_OnayProto",1);
+         			BaseObject.CurrentRow.Row.SetField&lt;|DateTime|&gt;("UD_OnayTarihProto",DateTime.Now);
+         			}
+       		 	}
+		}
+}</ScriptText>
+</ScriptDefinition>

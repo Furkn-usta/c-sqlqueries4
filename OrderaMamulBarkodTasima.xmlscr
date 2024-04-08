@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<ScriptDefinition xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Description="Order satırına renk ve ebata göre mamül kartından barkod taşıma" Enabled="true" Priority="0" ScriptName="OrderaMamulBarkodTasima">
+  <Events>
+    <Event Enabled="true" ObjectName="OrderReceiptEN" />
+    <Event Enabled="true" EventName="AfterSucceededPost" FunctionName="OnAfterSucceededPost" ObjectName="OrderReceiptEN" />
+  </Events>
+  <Histories />
+  <ScriptText>/*
+Tarih: 08.11.2021 - Revize
+Talep Eden : Umut Başak - Kayteks
+
+Order satırına renk ve ebata göre mamül kartından barkod taşıma
+*/
+
+function OnAfterSucceededPost(sender, ev)
+{
+	if( BaseObject == null || BaseObject.CurrentRow == null || BaseObject.CurrentRow.Row == null )
+		return null;
+	
+	foreach(ori in BaseObject.Data.Tables["IM_OrderReceiptItem"].Select("WorkOrderReceiptItemId is not null"))
+	{
+		q="SELECT ISNULL(IB.Barcode, \'\') Barcode, ISNULL(VI.ItemCode, \'\') ItemCode FROM IM_ItemBarcode IB LEFT JOIN IM_OrderReceiptItemVariant ORIV ON ORIV.OrderReceiptItemId = " + ori["RecId"].ToString() + " LEFT JOIN IM_ItemVariant IV on IV.RecId = ORIV.InventoryVariantId LEFT JOIN IM_VariantItem VI on VI.RecId = IV.Variant1Id  WHERE IB.InventoryVariantId = ORIV.InventoryVariantId";
+        r = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "r",q); 
+		
+		if(r == null || r.Rows.Count &lt;= 0)
+			return null;
+			
+		foreach(row in r.Rows)
+		{
+            if(string.IsNullOrWhiteSpace(row["Barcode"]) || string.IsNullOrWhiteSpace(row["ItemCode"]))
+                return null;
+
+			q4 = "SELECT * FROM MA_WorkOrderItem WHERE WorkOrderId=( SELECT WorkOrderId FROM MA_WorkOrderItem WHERE RecId = "+ ori["WorkOrderReceiptItemId"].ToString() +") AND WorkOrderSubType = 2 AND ParentItemId IS NULL AND OperationCode=\'"+row["ItemCode"]+"\'";            
+            r4 = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "r4",q4);
+			
+			if(r4 == null &amp;&amp; r4.Rows.Count &lt;= 0)
+				return  null;
+			
+			q5 = "SELECT * FROM MA_WorkOrderItem WHERE WorkOrderId=( SELECT WorkOrderId FROM MA_WorkOrderItem WHERE RecId = "+ ori["WorkOrderReceiptItemId"].ToString() +") AND WorkOrderSubType = 2 AND ParentItemId="+r4.Rows[0]["RecId"]+" ORDER BY SubNo DESC";
+			r5 = UtilityFunctions.GetDataTableList(BaseObject.Provider, BaseObject.Connection, BaseObject.Transaction, "r5",q5);
+			
+			subno = "1";
+			
+			if(r5 != null &amp;&amp; r5.Rows.Count &gt; 0 &amp;&amp; !string.IsNullOrWhiteSpace(r5.Rows[0]["SubNo"].ToString()))
+				subno = Convert.ToString(Convert.ToInt32(r5.Rows[0]["SubNo"]) + 1);
+
+            q6 = "INSERT INTO MA_WorkOrderItem (WorkOrderId, WorkOrderSubType, SubNo, OperationCode, ParentItemId, PackageQuantity, Status, IsClosed, IsChecked, InsertedAt, InsertedBy) VALUES ("+r4.Rows[0]["WorkOrderId"]+",2,"+subno+",\'"+row["Barcode"]+"\',"+r4.Rows[0]["RecId"]+",0,1,0,1,GETDATE(),"+BaseObject.ActiveSession.User.RecId.ToString()+")";
+            UtilityFunctions.SqlCustomScalarQuery(BaseObject.Connection,null,q6);
+		}
+	}
+}</ScriptText>
+</ScriptDefinition>
